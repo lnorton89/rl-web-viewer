@@ -1,8 +1,8 @@
 ---
 phase: 2
 slug: browser-live-view-pipeline
-status: draft
-nyquist_compliant: false
+status: approved
+nyquist_compliant: true
 wave_0_complete: false
 created: 2026-04-13
 ---
@@ -19,18 +19,18 @@ created: 2026-04-13
 |----------|-------|
 | **Framework** | `Vitest 4.1.4` |
 | **Config file** | `vitest.config.ts` |
-| **Quick run command** | `npx vitest run tests/live-view/*.test.ts -x` |
+| **Quick run command** | `npx vitest run tests/web/browser-workspace.test.tsx tests/media/live-mode-selection.test.ts tests/media/live-view-errors.test.ts tests/server/live-view-routes.test.ts tests/web/live-view-viewer.test.tsx tests/web/live-view-controls.test.tsx -x` |
 | **Full suite command** | `npm test` |
-| **Estimated runtime** | ~15 seconds |
+| **Estimated runtime** | ~20 seconds |
 
 ---
 
 ## Sampling Rate
 
-- **After every task commit:** Run `npx vitest run tests/live-view/*.test.ts -x`
+- **After every task commit:** Run the task's mapped `<automated>` command from the table below
 - **After every plan wave:** Run `npm test`
 - **Before `$gsd-verify-work`:** Full suite must be green
-- **Max feedback latency:** 15 seconds
+- **Max feedback latency:** 20 seconds
 
 ---
 
@@ -38,21 +38,27 @@ created: 2026-04-13
 
 | Task ID | Plan | Wave | Requirement | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|-----------|-------------------|-------------|--------|
-| 2-01-01 | 01 | 1 | LIVE-01 | unit + integration | `npx vitest run tests/media/live-mode-selection.test.ts tests/server/live-view-routes.test.ts -x` | ❌ W0 | ⬜ pending |
-| 2-01-02 | 01 | 1 | LIVE-02 | unit + jsdom | `npx vitest run tests/media/live-mode-selection.test.ts tests/web/live-view-controls.test.tsx -x` | ❌ W0 | ⬜ pending |
-| 2-01-03 | 01 | 1 | LIVE-03 | jsdom + unit | `npx vitest run tests/web/live-view-viewer.test.tsx tests/media/live-view-errors.test.ts -x` | ❌ W0 | ⬜ pending |
+| 2-01-01 | 01 | 1 | LIVE-01, LIVE-02 | build + jsdom smoke | `npx tsc -p web/tsconfig.json --noEmit && npx vitest run tests/web/browser-workspace.test.tsx -x && npx vite build --config web/vite.config.ts` | No - Wave 0 | pending |
+| 2-01-02 | 01 | 1 | LIVE-01, LIVE-02 | unit | `npx vitest run tests/media/live-mode-selection.test.ts -x` | No - Wave 0 | pending |
+| 2-02-01 | 02 | 2 | LIVE-01, LIVE-03 | unit | `npx vitest run tests/media/live-view-errors.test.ts -x` | No - Wave 0 | pending |
+| 2-02-02 | 02 | 2 | LIVE-01, LIVE-03 | integration | `npx vitest run tests/server/live-view-routes.test.ts -x` | No - Wave 0 | pending |
+| 2-03-01 | 03 | 2 | LIVE-01 | typecheck | `npx tsc -p web/tsconfig.json --noEmit` | Yes after 2-01 | pending |
+| 2-03-02 | 03 | 2 | LIVE-01, LIVE-03 | jsdom | `npx vitest run tests/web/live-view-viewer.test.tsx -x` | No - Wave 0 | pending |
+| 2-04-01 | 04 | 3 | LIVE-02, LIVE-03 | production build | `npm run build:web` | Yes after 2-01 and 2-03 | pending |
+| 2-04-02 | 04 | 3 | LIVE-02, LIVE-03 | jsdom | `npx vitest run tests/web/live-view-controls.test.tsx -x` | No - Wave 0 | pending |
 
-*Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
+*Status: pending · green · red · flaky*
 
 ---
 
 ## Wave 0 Requirements
 
+- [ ] `tests/web/browser-workspace.test.tsx` - jsdom/browser-workspace smoke coverage for `web/vite.config.ts`, `web/tsconfig.json`, `web/index.html`, and the Vitest environment split used by Plan 01 Task 1
 - [ ] `tests/media/live-mode-selection.test.ts` - startup ordering and fallback ladder coverage for `LIVE-01` and `LIVE-02`
+- [ ] `tests/media/live-view-errors.test.ts` - media-layer failure classification coverage for `LIVE-03`
 - [ ] `tests/server/live-view-routes.test.ts` - app-owned URLs, auth boundary, and diagnostics hook coverage for `LIVE-01` and `LIVE-03`
 - [ ] `tests/web/live-view-viewer.test.tsx` - overlay states, retry button, and reconnect UX coverage for `LIVE-03`
 - [ ] `tests/web/live-view-controls.test.tsx` - manual mode and quality selection coverage for `LIVE-02`
-- [ ] `tests/media/live-view-errors.test.ts` - media-layer failure classification coverage for `LIVE-03`
 - [ ] Browser-like test environment installs: `jsdom`, `@testing-library/react`, and `@testing-library/user-event`
 
 ---
@@ -69,11 +75,11 @@ created: 2026-04-13
 
 ## Validation Sign-Off
 
-- [ ] All tasks have `<automated>` verify or Wave 0 dependencies
-- [ ] Sampling continuity: no 3 consecutive tasks without automated verify
-- [ ] Wave 0 covers all MISSING references
-- [ ] No watch-mode flags
-- [ ] Feedback latency < 15s
-- [ ] `nyquist_compliant: true` set in frontmatter
+- [x] All 8 planned tasks have `<automated>` verify commands
+- [x] Sampling continuity is preserved across all 4 plans
+- [x] Wave 0 covers every planned missing test file and browser-environment dependency
+- [x] No watch-mode flags appear in quick-run or per-task commands
+- [x] Feedback latency stays within the targeted quick-run envelope for Phase 2 planning
+- [x] Frontmatter is aligned with an execution-ready contract: `status: approved`, `nyquist_compliant: true`, `wave_0_complete: false`
 
-**Approval:** pending
+**Approval:** approved
