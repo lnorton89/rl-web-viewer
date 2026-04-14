@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 02-02-PLAN.md
-last_updated: "2026-04-14T22:22:19.388Z"
+stopped_at: Completed 02-03-PLAN.md
+last_updated: "2026-04-14T22:26:38.450Z"
 last_activity: 2026-04-14
 progress:
   total_phases: 5
   completed_phases: 1
   total_plans: 7
-  completed_plans: 5
+  completed_plans: 6
   percent: 20
 ---
 
@@ -26,7 +26,7 @@ See: `.planning/PROJECT.md` (updated 2026-04-13)
 ## Current Position
 
 Phase: 02 (browser-live-view-pipeline) — EXECUTING
-Plan: 3 of 4
+Plan: 4 of 4
 Status: Ready to execute
 Last activity: 2026-04-14
 
@@ -53,6 +53,7 @@ Progress: `[##--------]` 20%
 
 | Phase 02 P01 | 7 min | 2 tasks | 10 files |
 | Phase 02 P02 | 15 min | 2 tasks | 13 files |
+| Phase 02 P03 | 17 min | 2 tasks | 11 files |
 
 ## Accumulated Context
 
@@ -70,6 +71,8 @@ Recent decisions affecting current work:
 - [Phase 02]: Keep firmware-specific RTSP suffixes in src/camera/reolink-live-streams.ts so the media layer only sees adapter-resolved source URLs and app relay paths.
 - [Phase 02]: Reject unsafe /api/live-view payloads if they contain camera credentials, tokens, or raw RTSP URLs.
 - [Phase 02]: Start Fastify by default and keep probe as an explicit subcommand so the browser API becomes the repo entrypoint without losing Phase 1 discovery.
+- [Phase 02]: Keep browser playback adapters thin and consume backend-owned whepUrl, hlsUrl, and snapshotUrl fields directly.
+- [Phase 02]: Expose renderKind, activePlayback, and callback refs from useLiveView so LiveViewerFrame can mount media surfaces without transport logic.
 
 ### Pending Todos
 
@@ -81,6 +84,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-14T22:22:19.384Z
-Stopped at: Completed 02-02-PLAN.md
+Last session: 2026-04-14T22:26:38.446Z
+Stopped at: Completed 02-03-PLAN.md
 Resume file: None
