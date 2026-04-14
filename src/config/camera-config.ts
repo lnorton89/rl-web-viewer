@@ -15,6 +15,7 @@ export const cameraConfigSchema = z.object({
   password: z.string(),
   modelHint: z.string().default("RLC-423S"),
   notes: z.string().default(""),
+  debugCapture: z.boolean().default(false),
   snapshot: snapshotSchema.default({
     model: "",
     hardVer: "",

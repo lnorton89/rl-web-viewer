@@ -24,6 +24,7 @@ const config: CameraConfig = {
   password: "",
   modelHint: "RLC-423S",
   notes: "",
+  debugCapture: false,
   snapshot: {
     model: "",
     hardVer: "",

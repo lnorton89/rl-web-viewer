@@ -139,6 +139,10 @@ export class ReolinkSession {
     return this.token;
   }
 
+  getUsername(): string {
+    return this.config.username;
+  }
+
   invalidateToken(): void {
     this.token = null;
   }

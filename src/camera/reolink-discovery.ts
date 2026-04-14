@@ -10,6 +10,7 @@ import type {
 } from "../types/reolink.js";
 
 export type ReolinkRequestExecutor = {
+  getUsername?(): string;
   requestJson<TResponse extends readonly ReolinkApiResponse[]>(
     commands: readonly ReolinkRequest[],
   ): Promise<TResponse>;
@@ -77,6 +78,7 @@ export async function getNetPort(
 export async function getAbility(
   session: ReolinkRequestExecutor,
 ): Promise<ReolinkAbility> {
+  const username = session.getUsername?.() ?? "admin";
   const responses = await session.requestJson<
     readonly ReolinkApiResponse<{ Ability: ReolinkAbility }>[]
   >([
@@ -85,7 +87,7 @@ export async function getAbility(
       action: 0,
       param: {
         User: {
-          userName: "admin",
+          userName: username,
         },
       },
     },
