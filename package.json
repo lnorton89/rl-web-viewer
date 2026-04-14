@@ -3,18 +3,31 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "build": "npm run build:server && npm run build:web",
+    "build:server": "tsc -p tsconfig.json",
+    "build:web": "vite build --config web/vite.config.ts",
+    "dev:web": "vite --config web/vite.config.ts",
     "test": "vitest run",
     "probe": "node --import tsx src/index.ts"
   },
   "dependencies": {
+    "@fastify/static": "^9.1.0",
+    "fastify": "^5.8.5",
+    "hls.js": "^1.6.16",
     "pino": "^10.3.1",
+    "react": "^19.2.5",
+    "react-dom": "^19.2.5",
     "zod": "^4.3.6"
   },
   "devDependencies": {
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.1",
     "@types/node": "^25.6.0",
+    "@vitejs/plugin-react": "^6.0.1",
+    "jsdom": "^29.0.2",
     "tsx": "^4.21.0",
     "typescript": "^6.0.2",
+    "vite": "^8.0.8",
     "vitest": "^4.1.4"
   }
 }
