@@ -57,6 +57,13 @@ Success criteria:
 3. The app surfaces stream startup, reconnect, and failure states clearly in the UI.
 4. The live-view implementation is documented enough to support later model expansion without re-architecting the control plane.
 
+**Plans:** 3 plans
+
+Plans:
+- [ ] 02-01-PLAN.md - Bootstrap the live-view workspace, shared contracts, and mode matrix
+- [ ] 02-02-PLAN.md - Implement the MediaMTX runtime, live-view service, and Fastify routes
+- [ ] 02-03-PLAN.md - Build the React viewer with auto-start, manual switching, and overlay states
+
 **UI hint**: yes
 
 ### Phase 3: PTZ Control Surface
