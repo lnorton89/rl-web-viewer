@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Executing Phase 1
-stopped_at: Completed 01-01-PLAN.md
-last_updated: "2026-04-14T01:38:23.6535230Z"
+stopped_at: Completed 01-02-PLAN.md
+last_updated: "2026-04-14T01:50:09.7128622Z"
 progress:
   total_phases: 5
   completed_phases: 0
   total_plans: 3
-  completed_plans: 1
+  completed_plans: 2
 ---
 
 # State
@@ -24,28 +24,28 @@ See: `.planning/PROJECT.md` (updated 2026-04-13)
 ## Current Position
 
 Phase: 1 of 5 (Camera Connectivity & Capability Map)
-Plan: 2 of 3 in current phase
+Plan: 3 of 3 in current phase
 Status: In progress
-Last activity: 2026-04-14 - Completed `01-01` foundation work and recorded the summary
+Last activity: 2026-04-14 - Completed `01-02` session and discovery work with live-camera fixtures
 
-Progress: `[###-------]` 33%
+Progress: `[#######---]` 67%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 1
-- Average duration: 5 min
+- Total plans completed: 2
+- Average duration: 3 min
 - Total execution time: 0.1 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| 1 | 1 | 5 min | 5 min |
+| 1 | 2 | 6 min | 3 min |
 
 **Recent Trend:**
-- Last 5 plans: 5 min
-- Trend: Stable
+- Last 5 plans: 5 min, 1 min
+- Trend: Improving
 
 ## Accumulated Context
 
@@ -56,6 +56,7 @@ Recent decisions affecting current work:
 
 - Phase 1: Persist LAN camera settings in `.local/camera.config.json` for first-run simplicity.
 - Phase 1: Keep shared Reolink types plus fixture-backed Vitest coverage in place from the foundation plan onward.
+- Phase 1: Bootstrap login with `?cmd=Login`, then use token-authenticated POST requests and sanitized request/response fixtures for discovery work.
 
 ### Pending Todos
 
@@ -67,6 +68,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-14 01:38Z
-Stopped at: Completed `01-01-PLAN.md`
+Last session: 2026-04-14 01:50Z
+Stopped at: Completed `01-02-PLAN.md`
 Resume file: None
