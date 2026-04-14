@@ -11,7 +11,6 @@ export type LiveModeId =
   | "snapshot:sub";
 
 export type ViewerStateKind =
-  | "idle"
   | "connecting"
   | "live"
   | "reconnecting"
