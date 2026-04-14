@@ -1,4 +1,4 @@
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 
 import type { CameraConfig } from "../config/camera-config.js";
@@ -7,6 +7,7 @@ import type {
   ReolinkAbility,
   ReolinkNetPort,
 } from "../types/reolink.js";
+import { z } from "zod";
 
 export type CapabilitySnapshot = {
   identity: CameraIdentity;
@@ -24,6 +25,27 @@ export type CapabilitySnapshot = {
   supportsSnapshot: boolean;
   supportsConfigRead: boolean;
 };
+
+const capabilitySnapshotSchema = z.object({
+  identity: z.object({
+    model: z.string(),
+    hardVer: z.string(),
+    firmVer: z.string(),
+  }),
+  ports: z.object({
+    http: z.number(),
+    https: z.number(),
+    media: z.number(),
+    onvif: z.number(),
+    rtsp: z.number(),
+  }),
+  supportsLiveView: z.boolean(),
+  supportsPtzControl: z.boolean(),
+  supportsPtzPreset: z.boolean(),
+  supportsPtzPatrol: z.boolean(),
+  supportsSnapshot: z.boolean(),
+  supportsConfigRead: z.boolean(),
+});
 
 export function buildCapabilitySnapshot(input: {
   identity: CameraIdentity;
@@ -70,6 +92,14 @@ export async function saveCapabilitySnapshot(
   await mkdir(path.dirname(snapshotPath), { recursive: true });
   await writeFile(snapshotPath, `${JSON.stringify(snapshot, null, 2)}\n`, "utf8");
   return snapshotPath;
+}
+
+export async function loadCapabilitySnapshot(
+  config: CameraConfig,
+  snapshotPath = defaultCapabilitySnapshotPath(config),
+): Promise<CapabilitySnapshot> {
+  const raw = await readFile(snapshotPath, "utf8");
+  return capabilitySnapshotSchema.parse(JSON.parse(raw));
 }
 
 function hasChannelPermit(ability: ReolinkAbility, key: string): boolean {

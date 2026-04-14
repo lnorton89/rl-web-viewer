@@ -30,12 +30,14 @@ export type LiveMode = {
   quality: StreamQuality;
   enabled: boolean;
   playback: LiveViewPlayback;
+  disabledReason?: string;
 };
 
 export type LiveViewBootstrap = {
   modes: LiveMode[];
   preferredModeId: LiveModeId | null;
   fallbackOrder: LiveModeId[];
+  diagnostics: LiveViewDiagnostics;
 };
 
 export type LiveViewDiagnostics = {
