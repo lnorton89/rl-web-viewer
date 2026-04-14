@@ -1,0 +1,1 @@
+{"request":[{"cmd":"Login","action":0,"param":{"User":{"userName":"admin","password":""}}}],"response":[{"cmd":"Login","code":0,"value":{"Token":{"leaseTime":3600,"name":"fixture-token"}}}]}

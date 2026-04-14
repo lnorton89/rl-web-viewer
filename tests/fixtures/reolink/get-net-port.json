@@ -1,0 +1,1 @@
+{"request":[{"cmd":"GetNetPort","action":0,"param":{}}],"response":[{"cmd":"GetNetPort","code":0,"value":{"NetPort":{"httpPort":80,"httpsPort":443,"mediaPort":9000,"onvifPort":8000,"rtmpPort":1935,"rtspPort":554}}}]}
