@@ -52,6 +52,7 @@ created: 2026-04-13
 - [ ] `tests/server/live-view-routes.test.ts` - app-owned URLs, auth boundary, and diagnostics hook coverage for `LIVE-01` and `LIVE-03`
 - [ ] `tests/web/live-view-viewer.test.tsx` - overlay states, retry button, and reconnect UX coverage for `LIVE-03`
 - [ ] `tests/web/live-view-controls.test.tsx` - manual mode and quality selection coverage for `LIVE-02`
+- [ ] `tests/media/live-view-errors.test.ts` - media-layer failure classification coverage for `LIVE-03`
 - [ ] Browser-like test environment installs: `jsdom`, `@testing-library/react`, and `@testing-library/user-event`
 
 ---
