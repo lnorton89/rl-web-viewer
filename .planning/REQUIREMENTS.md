@@ -9,7 +9,7 @@
 
 - [x] **CONN-01**: User can register the RLC-423S in the app by entering its LAN IP address, username, and password.
 - [x] **CONN-02**: User can validate connectivity and see the connected camera's model, hardware, and firmware details before using controls.
-- [ ] **CONN-03**: User can use the app entirely on the local network without requiring Reolink cloud account or UID-based access.
+- [x] **CONN-03**: User can use the app entirely on the local network without requiring Reolink cloud account or UID-based access.
 - [x] **CONN-04**: User can keep using controls after session expiry because the app detects auth failures and re-authenticates automatically.
 
 ### Live View
@@ -33,9 +33,9 @@
 
 ### Compatibility & Diagnostics
 
-- [ ] **COMP-01**: The app identifies the connected camera model/firmware and loads the correct capability profile for the RLC-423S.
-- [ ] **COMP-02**: User only sees controls that are supported by the connected camera/firmware, rather than broken or misleading UI.
-- [ ] **COMP-03**: User can enable a debug mode that captures unsupported or unexpected API responses for troubleshooting and future model support.
+- [x] **COMP-01**: The app identifies the connected camera model/firmware and loads the correct capability profile for the RLC-423S.
+- [x] **COMP-02**: User only sees controls that are supported by the connected camera/firmware, rather than broken or misleading UI.
+- [x] **COMP-03**: User can enable a debug mode that captures unsupported or unexpected API responses for troubleshooting and future model support.
 
 ## v2 Requirements
 
@@ -71,11 +71,11 @@
 |-------------|-------|--------|
 | CONN-01 | Phase 1 | Complete |
 | CONN-02 | Phase 1 | Complete |
-| CONN-03 | Phase 1 | Pending |
+| CONN-03 | Phase 1 | Complete |
 | CONN-04 | Phase 1 | Complete |
-| COMP-01 | Phase 1 | Pending |
-| COMP-02 | Phase 1 | Pending |
-| COMP-03 | Phase 1 | Pending |
+| COMP-01 | Phase 1 | Complete |
+| COMP-02 | Phase 1 | Complete |
+| COMP-03 | Phase 1 | Complete |
 | LIVE-01 | Phase 2 | Pending |
 | LIVE-02 | Phase 2 | Pending |
 | LIVE-03 | Phase 2 | Pending |
@@ -94,4 +94,4 @@
 
 ---
 *Requirements defined: 2026-04-13*
-*Last updated: 2026-04-13 after initial definition*
+*Last updated: 2026-04-14 after Phase 1 completion*
