@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: Ready for next phase
-stopped_at: Phase 2 planned
-last_updated: "2026-04-14T21:35:45.310Z"
-last_activity: 2026-04-14 - Completed Phase 1 with a live-verified local probe and persisted capability snapshot
+status: executing
+stopped_at: Completed 02-01-PLAN.md
+last_updated: "2026-04-14T22:06:26.335Z"
+last_activity: 2026-04-14
 progress:
   total_phases: 5
   completed_phases: 1
   total_plans: 7
-  completed_plans: 3
+  completed_plans: 4
   percent: 20
 ---
 
@@ -21,14 +21,14 @@ progress:
 See: `.planning/PROJECT.md` (updated 2026-04-13)
 
 **Core value:** Reliable local live view and PTZ/control of the RLC-423S from a modern browser without depending on Flash, cloud services, or the old vendor web UI.
-**Current focus:** Phase 2 - Browser Live View Pipeline
+**Current focus:** Phase 02 — browser-live-view-pipeline
 
 ## Current Position
 
-Phase: 2 of 5 (Browser Live View Pipeline)
-Plan: awaiting discussion and planning
-Status: Ready for next phase
-Last activity: 2026-04-14 - Completed Phase 1 with a live-verified local probe and persisted capability snapshot
+Phase: 02 (browser-live-view-pipeline) — EXECUTING
+Plan: 2 of 4
+Status: Ready to execute
+Last activity: 2026-04-14
 
 Progress: `[##--------]` 20%
 
@@ -51,6 +51,8 @@ Progress: `[##--------]` 20%
 - Last 5 plans: 5 min, 1 min, 1 min
 - Trend: Improving
 
+| Phase 02 P01 | 7 min | 2 tasks | 10 files |
+
 ## Accumulated Context
 
 ### Decisions
@@ -62,6 +64,8 @@ Recent decisions affecting current work:
 - Phase 1: Keep shared Reolink types plus fixture-backed Vitest coverage in place from the foundation plan onward.
 - Phase 1: Bootstrap login with `?cmd=Login`, then use token-authenticated POST requests and sanitized request/response fixtures for discovery work.
 - Phase 1: Normalize raw ability data into persisted capability flags before starting live-view and PTZ UI work.
+- [Phase 02]: Shared live-view playback URLs now live in src/types/live-view.ts so backend routes own browser endpoint construction.
+- [Phase 02]: Phase 2 startup and fallback selection is now fixed in code as webrtc:main -> webrtc:sub -> hls:sub -> snapshot:main while keeping extra manual-capability modes available.
 
 ### Pending Todos
 
@@ -73,6 +77,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-14T21:35:45.306Z
-Stopped at: Phase 2 planned
-Resume file: .planning/phases/02-browser-live-view-pipeline/02-01-PLAN.md
+Last session: 2026-04-14T22:06:26.330Z
+Stopped at: Completed 02-01-PLAN.md
+Resume file: None

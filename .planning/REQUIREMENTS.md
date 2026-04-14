@@ -14,8 +14,8 @@
 
 ### Live View
 
-- [ ] **LIVE-01**: User can open a live view of the camera in a modern browser without Flash or browser plugins.
-- [ ] **LIVE-02**: User can switch between available stream qualities or fallback viewing modes exposed by the connected camera/media pipeline.
+- [x] **LIVE-01**: User can open a live view of the camera in a modern browser without Flash or browser plugins.
+- [x] **LIVE-02**: User can switch between available stream qualities or fallback viewing modes exposed by the connected camera/media pipeline.
 - [ ] **LIVE-03**: User can see actionable live-view status and error messages when the media connection fails or the stream format is unsupported.
 
 ### PTZ Control
@@ -76,8 +76,8 @@
 | COMP-01 | Phase 1 | Complete |
 | COMP-02 | Phase 1 | Complete |
 | COMP-03 | Phase 1 | Complete |
-| LIVE-01 | Phase 2 | Pending |
-| LIVE-02 | Phase 2 | Pending |
+| LIVE-01 | Phase 2 | Complete |
+| LIVE-02 | Phase 2 | Complete |
 | LIVE-03 | Phase 2 | Pending |
 | PTZ-01 | Phase 3 | Pending |
 | PTZ-02 | Phase 3 | Pending |
