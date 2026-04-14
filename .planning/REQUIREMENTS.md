@@ -7,7 +7,7 @@
 
 ### Connectivity
 
-- [ ] **CONN-01**: User can register the RLC-423S in the app by entering its LAN IP address, username, and password.
+- [x] **CONN-01**: User can register the RLC-423S in the app by entering its LAN IP address, username, and password.
 - [ ] **CONN-02**: User can validate connectivity and see the connected camera's model, hardware, and firmware details before using controls.
 - [ ] **CONN-03**: User can use the app entirely on the local network without requiring Reolink cloud account or UID-based access.
 - [ ] **CONN-04**: User can keep using controls after session expiry because the app detects auth failures and re-authenticates automatically.
@@ -69,7 +69,7 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| CONN-01 | Phase 1 | Pending |
+| CONN-01 | Phase 1 | Complete |
 | CONN-02 | Phase 1 | Pending |
 | CONN-03 | Phase 1 | Pending |
 | CONN-04 | Phase 1 | Pending |
