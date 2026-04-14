@@ -8,7 +8,7 @@
     "build:web": "vite build --config web/vite.config.ts",
     "dev:web": "vite --config web/vite.config.ts",
     "test": "vitest run",
-    "probe": "node --import tsx src/index.ts"
+    "probe": "node --import tsx src/index.ts probe"
   },
   "dependencies": {
     "@fastify/static": "^9.1.0",

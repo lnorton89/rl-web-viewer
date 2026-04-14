@@ -5,6 +5,8 @@ import { probeCamera } from "./camera/reolink-discovery.js";
 import { ReolinkSession } from "./camera/reolink-session.js";
 import { loadCameraConfig } from "./config/camera-config.js";
 import { writeDebugArtifact } from "./diagnostics/debug-capture.js";
+import { startMediaRelay } from "./media/live-view-service.js";
+import { createServer } from "./server/create-server.js";
 
 export async function probe(args = process.argv.slice(2)): Promise<void> {
   const config = await loadCameraConfig();
@@ -57,10 +59,32 @@ export async function probe(args = process.argv.slice(2)): Promise<void> {
   console.log(lines.join("\n"));
 }
 
+export async function startServer(): Promise<void> {
+  const port = Number(process.env.PORT ?? 4000);
+
+  await startMediaRelay();
+  const app = await createServer();
+  await app.listen({
+    host: "127.0.0.1",
+    port,
+  });
+}
+
+export async function main(args = process.argv.slice(2)): Promise<void> {
+  const [command, ...rest] = args;
+
+  if (command === "probe") {
+    await probe(rest);
+    return;
+  }
+
+  await startServer();
+}
+
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
-  probe().catch((error: unknown) => {
+  main().catch((error: unknown) => {
     const message = error instanceof Error ? error.message : String(error);
-    console.error(`probe failed: ${message}`);
+    console.error(`startup failed: ${message}`);
     process.exitCode = 1;
   });
 }
