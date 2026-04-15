@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: planning
-stopped_at: Phase 3 UI-SPEC approved
-last_updated: "2026-04-15T03:06:42.349Z"
+status: executing
+stopped_at: Completed 03-02-PLAN.md
+last_updated: "2026-04-15T06:44:13.319Z"
 last_activity: 2026-04-15
 progress:
   total_phases: 5
   completed_phases: 2
-  total_plans: 7
-  completed_plans: 7
+  total_plans: 10
+  completed_plans: 9
   percent: 20
 ---
 
@@ -21,13 +21,13 @@ progress:
 See: `.planning/PROJECT.md` (updated 2026-04-13)
 
 **Core value:** Reliable local live view and PTZ/control of the RLC-423S from a modern browser without depending on Flash, cloud services, or the old vendor web UI.
-**Current focus:** Phase 03 - ptz-control-surface
+**Current focus:** Phase 03 — ptz-control-surface
 
 ## Current Position
 
-Phase: 3
-Plan: Not started
-Status: Context gathered - ready for planning
+Phase: 03 (ptz-control-surface) — EXECUTING
+Plan: 3 of 3
+Status: Ready to execute
 Last activity: 2026-04-15
 
 Progress: `[##--------]` 20%
@@ -55,6 +55,8 @@ Progress: `[##--------]` 20%
 | Phase 02 P02 | 15 min | 2 tasks | 13 files |
 | Phase 02 P03 | 17 min | 2 tasks | 11 files |
 | Phase 02 P04 | 4 min | 2 tasks | 9 files |
+| Phase 03 P01 | 5 min | 2 tasks | 5 files |
+| Phase 03 P02 | 4 min | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -76,6 +78,10 @@ Recent decisions affecting current work:
 - [Phase 02]: Expose renderKind, activePlayback, and callback refs from useLiveView so LiveViewerFrame can mount media surfaces without transport logic.
 - [Phase 02]: Keep diagnostics collapsed by default and show only hook-provided mode, reason, and nextFallbackModeId metadata. This keeps troubleshooting secondary in the Phase 2 viewer while preventing duplicated fallback logic or credential exposure in the browser UI.
 - [Phase 02]: Drive manual mode switching directly from the hook-provided LiveMode list and labels. This preserves capability gating and sticky manual mode behavior from plan 02-03 instead of rebuilding mode semantics in the UI layer.
+- [Phase 03]: Keep raw Reolink PTZ op names private to src/camera/reolink-ptz.ts and expose normalized PTZ direction contracts upward.
+- [Phase 03]: Own PTZ stop safety in the backend with a 5000ms watchdog and 250ms zoom pulse instead of duplicating timing rules in later layers.
+- [Phase 03]: Keep PTZ browser traffic on the existing Fastify control plane so the dashboard never needs camera credentials, tokens, or raw CGI payloads.
+- [Phase 03]: Gate motion, stop, zoom, and preset recall in the route layer from the PTZ bootstrap capability snapshot so unsupported actions fail before reaching the adapter.
 
 ### Pending Todos
 
@@ -87,6 +93,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-15T03:06:42.349Z
-Stopped at: Phase 3 UI-SPEC approved
-Resume file: .planning/phases/03-ptz-control-surface/03-UI-SPEC.md
+Last session: 2026-04-15T06:44:13.312Z
+Stopped at: Completed 03-02-PLAN.md
+Resume file: None

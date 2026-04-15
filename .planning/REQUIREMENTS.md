@@ -20,9 +20,9 @@
 
 ### PTZ Control
 
-- [ ] **PTZ-01**: User can pan, tilt, and zoom the camera from the web dashboard.
-- [ ] **PTZ-02**: User can stop PTZ movement promptly from the dashboard after starting motion.
-- [ ] **PTZ-03**: User can view and trigger saved PTZ presets when the connected camera/firmware supports them.
+- [x] **PTZ-01**: User can pan, tilt, and zoom the camera from the web dashboard.
+- [x] **PTZ-02**: User can stop PTZ movement promptly from the dashboard after starting motion.
+- [x] **PTZ-03**: User can view and trigger saved PTZ presets when the connected camera/firmware supports them.
 
 ### Settings & Configuration
 
@@ -79,9 +79,9 @@
 | LIVE-01 | Phase 2 | Complete |
 | LIVE-02 | Phase 2 | Complete |
 | LIVE-03 | Phase 2 | Complete |
-| PTZ-01 | Phase 3 | Pending |
-| PTZ-02 | Phase 3 | Pending |
-| PTZ-03 | Phase 3 | Pending |
+| PTZ-01 | Phase 3 | Complete |
+| PTZ-02 | Phase 3 | Complete |
+| PTZ-03 | Phase 3 | Complete |
 | CONF-01 | Phase 4 | Pending |
 | CONF-02 | Phase 4 | Pending |
 | CONF-03 | Phase 4 | Pending |
