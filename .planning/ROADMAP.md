@@ -63,7 +63,7 @@ Plans:
 - [x] 02-01-PLAN.md - Bootstrap the live-view workspace, shared contracts, and mode matrix
 - [x] 02-02-PLAN.md - Implement the MediaMTX runtime, live-view service, and Fastify routes
 - [x] 02-03-PLAN.md - Implement the viewer transport adapters, API client, and state machine
-- [ ] 02-04-PLAN.md - Build the React viewer shell, controls, and diagnostics surfaces
+- [x] 02-04-PLAN.md - Build the React viewer shell, controls, and diagnostics surfaces
 
 **UI hint**: yes
 

@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: executing
-stopped_at: Completed 02-03-PLAN.md
-last_updated: "2026-04-14T22:26:38.450Z"
-last_activity: 2026-04-14
+status: verifying
+stopped_at: Completed 02-04-PLAN.md
+last_updated: "2026-04-15T01:35:30.964Z"
+last_activity: 2026-04-15
 progress:
   total_phases: 5
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 7
-  completed_plans: 6
+  completed_plans: 7
   percent: 20
 ---
 
@@ -27,8 +27,8 @@ See: `.planning/PROJECT.md` (updated 2026-04-13)
 
 Phase: 02 (browser-live-view-pipeline) — EXECUTING
 Plan: 4 of 4
-Status: Ready to execute
-Last activity: 2026-04-14
+Status: Phase complete — ready for verification
+Last activity: 2026-04-15
 
 Progress: `[##--------]` 20%
 
@@ -54,6 +54,7 @@ Progress: `[##--------]` 20%
 | Phase 02 P01 | 7 min | 2 tasks | 10 files |
 | Phase 02 P02 | 15 min | 2 tasks | 13 files |
 | Phase 02 P03 | 17 min | 2 tasks | 11 files |
+| Phase 02 P04 | 4 min | 2 tasks | 9 files |
 
 ## Accumulated Context
 
@@ -73,6 +74,8 @@ Recent decisions affecting current work:
 - [Phase 02]: Start Fastify by default and keep probe as an explicit subcommand so the browser API becomes the repo entrypoint without losing Phase 1 discovery.
 - [Phase 02]: Keep browser playback adapters thin and consume backend-owned whepUrl, hlsUrl, and snapshotUrl fields directly.
 - [Phase 02]: Expose renderKind, activePlayback, and callback refs from useLiveView so LiveViewerFrame can mount media surfaces without transport logic.
+- [Phase 02]: Keep diagnostics collapsed by default and show only hook-provided mode, reason, and nextFallbackModeId metadata. — This keeps troubleshooting secondary in the Phase 2 viewer while preventing duplicated fallback logic or credential exposure in the browser UI.
+- [Phase 02]: Drive manual mode switching directly from the hook-provided LiveMode list and labels. — This preserves capability gating and sticky manual mode behavior from plan 02-03 instead of rebuilding mode semantics in the UI layer.
 
 ### Pending Todos
 
@@ -84,6 +87,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-14T22:26:38.446Z
-Stopped at: Completed 02-03-PLAN.md
+Last session: 2026-04-15T01:35:08.496Z
+Stopped at: Completed 02-04-PLAN.md
 Resume file: None
