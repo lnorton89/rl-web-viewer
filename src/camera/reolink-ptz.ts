@@ -41,6 +41,7 @@ type CreateReolinkPtzServiceOptions = {
   ) => Promise<CapabilitySnapshot>;
   setTimeout?: typeof setTimeout;
   clearTimeout?: typeof clearTimeout;
+  wait?: (ms: number) => Promise<void>;
 };
 
 type PresetResponseValue = {
@@ -61,64 +62,173 @@ export function createReolinkPtzService(
   const resolveSession = createSessionResolver(options, resolveConfig);
   const setTimer = options.setTimeout ?? globalThis.setTimeout;
   const clearTimer = options.clearTimeout ?? globalThis.clearTimeout;
+  const wait = options.wait ?? ((ms: number) => delay(ms, setTimer));
 
   let activeMotion: PtzDirection | null = null;
   let watchdogTimer: TimeoutHandle | null = null;
 
-  return {
-    async getBootstrap(): Promise<PtzBootstrap> {
-      const snapshot = await resolveSnapshot();
-      const presets = snapshot.supportsPtzPreset
-        ? await loadEnabledPresets({
-            resolveConfig,
-            resolveSession,
-            snapshot,
-            debugArtifactDirectory: options.debugArtifactDirectory,
-          })
-        : [];
+  async function getBootstrap(): Promise<PtzBootstrap> {
+    const snapshot = await resolveSnapshot();
+    const presets = snapshot.supportsPtzPreset
+      ? await loadEnabledPresets({
+          resolveConfig,
+          resolveSession,
+          snapshot,
+          debugArtifactDirectory: options.debugArtifactDirectory,
+        })
+      : [];
 
+    return {
+      supportsPtzControl: snapshot.supportsPtzControl,
+      supportsPtzPreset: snapshot.supportsPtzPreset,
+      hasVisibleStop: true,
+      stopDeadlineMs: DEFAULT_STOP_DEADLINE_MS,
+      zoomPulseMs: DEFAULT_ZOOM_PULSE_MS,
+      presets,
+    };
+  }
+
+  async function startMotion(direction: PtzDirection): Promise<MotionStartResult> {
+    const snapshot = await resolveSnapshot();
+    assertSupportsPtzControl(snapshot);
+
+    const request = [
+      createPtzCtrlRequest(directionToOperation(direction), {
+        speed: DEFAULT_MOVE_SPEED,
+      }),
+    ] as const;
+
+    await sendPtzCtrlRequest({
+      request,
+      resolveConfig,
+      resolveSession,
+      debugArtifactDirectory: options.debugArtifactDirectory,
+    });
+
+    activeMotion = direction;
+    resetWatchdog();
+
+    return {
+      direction,
+      stopDeadlineMs: DEFAULT_STOP_DEADLINE_MS,
+    };
+  }
+
+  async function stopMotion(reason: PtzStopReason): Promise<MotionStopResult> {
+    clearWatchdog();
+
+    if (!activeMotion) {
       return {
-        supportsPtzControl: snapshot.supportsPtzControl,
-        supportsPtzPreset: snapshot.supportsPtzPreset,
-        hasVisibleStop: true,
-        stopDeadlineMs: DEFAULT_STOP_DEADLINE_MS,
-        zoomPulseMs: DEFAULT_ZOOM_PULSE_MS,
-        presets,
-      };
-    },
-
-    async startMotion(_direction: PtzDirection): Promise<MotionStartResult> {
-      throw new Error("PTZ motion control is not available yet");
-    },
-
-    async stopMotion(reason: PtzStopReason): Promise<MotionStopResult> {
-      if (watchdogTimer) {
-        clearTimer(watchdogTimer);
-        watchdogTimer = null;
-      }
-
-      if (!activeMotion) {
-        return {
-          stopped: false,
-          reason,
-        };
-      }
-
-      activeMotion = null;
-
-      return {
-        stopped: true,
+        stopped: false,
         reason,
       };
-    },
+    }
 
-    async pulseZoom(_direction: PtzZoomDirection): Promise<ZoomPulseResult> {
-      throw new Error("PTZ zoom control is not available yet");
-    },
+    const request = [createPtzCtrlRequest("Stop")] as const;
 
-    async recallPreset(_presetId: number): Promise<PresetRecallResult> {
-      throw new Error("PTZ preset recall is not available yet");
-    },
+    await sendPtzCtrlRequest({
+      request,
+      resolveConfig,
+      resolveSession,
+      debugArtifactDirectory: options.debugArtifactDirectory,
+    });
+
+    activeMotion = null;
+
+    return {
+      stopped: true,
+      reason,
+    };
+  }
+
+  async function pulseZoom(direction: PtzZoomDirection): Promise<ZoomPulseResult> {
+    const snapshot = await resolveSnapshot();
+    assertSupportsPtzControl(snapshot);
+
+    const request = [
+      createPtzCtrlRequest(zoomDirectionToOperation(direction), {
+        speed: DEFAULT_MOVE_SPEED,
+      }),
+    ] as const;
+
+    await sendPtzCtrlRequest({
+      request,
+      resolveConfig,
+      resolveSession,
+      debugArtifactDirectory: options.debugArtifactDirectory,
+    });
+    await wait(DEFAULT_ZOOM_PULSE_MS);
+    await sendPtzCtrlRequest({
+      request: [createPtzCtrlRequest("Stop")] as const,
+      resolveConfig,
+      resolveSession,
+      debugArtifactDirectory: options.debugArtifactDirectory,
+    });
+
+    return {
+      direction,
+      pulseMs: DEFAULT_ZOOM_PULSE_MS,
+    };
+  }
+
+  async function recallPreset(presetId: number): Promise<PresetRecallResult> {
+    const snapshot = await resolveSnapshot();
+
+    if (!snapshot.supportsPtzPreset) {
+      throw new Error("Persisted capability snapshot does not support PTZ presets");
+    }
+
+    const presets = await loadEnabledPresets({
+      resolveConfig,
+      resolveSession,
+      snapshot,
+      debugArtifactDirectory: options.debugArtifactDirectory,
+    });
+    const targetPreset = presets.find((preset) => preset.id === presetId);
+
+    if (!targetPreset) {
+      throw new Error(`PTZ preset ${presetId} is not available`);
+    }
+
+    const request = [
+      createPtzCtrlRequest("ToPos", {
+        id: targetPreset.id,
+        speed: DEFAULT_PRESET_SPEED,
+      }),
+    ] as const;
+
+    await sendPtzCtrlRequest({
+      request,
+      resolveConfig,
+      resolveSession,
+      debugArtifactDirectory: options.debugArtifactDirectory,
+    });
+
+    return {
+      presetId: targetPreset.id,
+    };
+  }
+
+  function resetWatchdog(): void {
+    clearWatchdog();
+    watchdogTimer = setTimer(() => {
+      void stopMotion("watchdog");
+    }, DEFAULT_STOP_DEADLINE_MS);
+  }
+
+  function clearWatchdog(): void {
+    if (watchdogTimer) {
+      clearTimer(watchdogTimer);
+      watchdogTimer = null;
+    }
+  }
+
+  return {
+    getBootstrap,
+    startMotion,
+    stopMotion,
+    pulseZoom,
+    recallPreset,
   };
 }
 
@@ -211,6 +321,50 @@ async function loadEnabledPresets(input: {
   return presets;
 }
 
+type PtzCtrlOperation =
+  | "Up"
+  | "Down"
+  | "Left"
+  | "Right"
+  | "Stop"
+  | "ZoomInc"
+  | "ZoomDec"
+  | "ToPos";
+
+async function sendPtzCtrlRequest(input: {
+  request: readonly ReolinkRequest[];
+  resolveConfig: () => Promise<CameraConfig>;
+  resolveSession: () => Promise<SessionLike>;
+  debugArtifactDirectory?: string;
+}): Promise<void> {
+  const [config, session] = await Promise.all([
+    input.resolveConfig(),
+    input.resolveSession(),
+  ]);
+  const response =
+    await session.requestJson<readonly ReolinkApiResponse[]>(input.request);
+  const firstResponse = response[0];
+
+  if (firstResponse?.code === 0) {
+    return;
+  }
+
+  await captureDebugArtifact({
+    config,
+    command: "PtzCtrl",
+    requestBody: input.request,
+    responseBody: response,
+    status: firstResponse?.code ?? 500,
+    debugArtifactDirectory: input.debugArtifactDirectory,
+  });
+
+  const detail =
+    typeof firstResponse?.error?.detail === "string"
+      ? `: ${firstResponse.error.detail}`
+      : "";
+  throw new Error(`PTZ command failed${detail}`);
+}
+
 function createPresetRequest(): ReolinkRequest {
   return {
     cmd: "GetPtzPreset",
@@ -219,6 +373,43 @@ function createPresetRequest(): ReolinkRequest {
       channel: DEFAULT_CHANNEL,
     },
   };
+}
+
+function createPtzCtrlRequest(
+  op: PtzCtrlOperation,
+  extraParam: Record<string, unknown> = {},
+): ReolinkRequest {
+  return {
+    cmd: "PtzCtrl",
+    action: 0,
+    param: {
+      channel: DEFAULT_CHANNEL,
+      op,
+      ...extraParam,
+    },
+  };
+}
+
+function directionToOperation(direction: PtzDirection): PtzCtrlOperation {
+  switch (direction) {
+    case "up":
+      return "Up";
+    case "down":
+      return "Down";
+    case "left":
+      return "Left";
+    case "right":
+      return "Right";
+  }
+}
+
+function zoomDirectionToOperation(direction: PtzZoomDirection): PtzCtrlOperation {
+  switch (direction) {
+    case "in":
+      return "ZoomInc";
+    case "out":
+      return "ZoomDec";
+  }
 }
 
 function normalizePresetEntries(value: unknown): PtzPreset[] | null {
@@ -289,6 +480,12 @@ function normalizeInteger(value: unknown): number | null {
   return null;
 }
 
+function assertSupportsPtzControl(snapshot: CapabilitySnapshot): void {
+  if (!snapshot.supportsPtzControl) {
+    throw new Error("Persisted capability snapshot does not support PTZ control");
+  }
+}
+
 async function captureDebugArtifact(input: {
   config: CameraConfig;
   command: string;
@@ -315,4 +512,10 @@ async function captureDebugArtifact(input: {
 
 function withTrailingSlash(baseUrl: string): string {
   return baseUrl.endsWith("/") ? baseUrl : `${baseUrl}/`;
+}
+
+function delay(ms: number, setTimer: typeof setTimeout): Promise<void> {
+  return new Promise((resolve) => {
+    setTimer(resolve, ms);
+  });
 }
