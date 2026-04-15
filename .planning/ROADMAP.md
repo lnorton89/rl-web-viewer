@@ -86,6 +86,13 @@ Success criteria:
 
 **UI hint**: yes
 
+**Plans:** 3 plans
+
+Plans:
+- [ ] 03-01-PLAN.md - Define the PTZ contracts, Reolink adapter behavior, and fixture-backed camera tests
+- [ ] 03-02-PLAN.md - Expose browser-safe PTZ Fastify routes and mount them in the local app server
+- [ ] 03-03-PLAN.md - Build the attached PTZ panel, hook lifecycle, and browser interaction tests
+
 ### Phase 4: Settings & Safe Configuration
 
 Goal: Add read/write configuration management in a way that is explicit, validated, and safe for the known firmware.
