@@ -1,0 +1,32 @@
+[
+  {
+    "cmd": "GetTime",
+    "code": 0,
+    "value": {
+      "Time": {
+        "channel": 0,
+        "timeZone": -8,
+        "timeFmt": "MM/DD/YYYY",
+        "hourFmt": 1,
+        "year": 2026,
+        "mon": 4,
+        "day": 15,
+        "hour": 11,
+        "min": 22,
+        "sec": 33,
+        "Dst": {
+          "enable": 1,
+          "offset": 1,
+          "startMon": 3,
+          "startWeek": 2,
+          "startWeekday": 0,
+          "startHour": 2,
+          "endMon": 11,
+          "endWeek": 1,
+          "endWeekday": 0,
+          "endHour": 2
+        }
+      }
+    }
+  }
+]

@@ -1,0 +1,20 @@
+[
+  {
+    "cmd": "GetOsd",
+    "code": 0,
+    "value": {
+      "Osd": {
+        "channel": 0,
+        "osdChannel": {
+          "enable": 1,
+          "name": "Front Gate",
+          "pos": "Upper Left"
+        },
+        "osdTime": {
+          "enable": 1,
+          "pos": "Lower Right"
+        }
+      }
+    }
+  }
+]

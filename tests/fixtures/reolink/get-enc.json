@@ -1,0 +1,24 @@
+[
+  {
+    "cmd": "GetEnc",
+    "code": 0,
+    "value": {
+      "Enc": {
+        "channel": 0,
+        "audio": 1,
+        "mainStream": {
+          "size": "3072x1728",
+          "frameRate": 25,
+          "bitRate": 6144,
+          "profile": "High"
+        },
+        "subStream": {
+          "size": "640x360",
+          "frameRate": 10,
+          "bitRate": 512,
+          "profile": "Main"
+        }
+      }
+    }
+  }
+]

@@ -1,0 +1,16 @@
+[
+  {
+    "cmd": "GetIsp",
+    "code": 0,
+    "value": {
+      "Isp": {
+        "channel": 0,
+        "dayNight": "Auto",
+        "backLight": "DynamicRangeControl",
+        "antiFlicker": "60Hz",
+        "exposureMode": "Auto",
+        "nr3d": 1
+      }
+    }
+  }
+]

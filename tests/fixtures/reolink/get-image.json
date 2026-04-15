@@ -1,0 +1,16 @@
+[
+  {
+    "cmd": "GetImage",
+    "code": 0,
+    "value": {
+      "Image": {
+        "channel": 0,
+        "bright": 128,
+        "contrast": 96,
+        "hue": 128,
+        "saturation": 110,
+        "sharpen": 128
+      }
+    }
+  }
+]
