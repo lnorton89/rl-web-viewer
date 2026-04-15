@@ -21,13 +21,13 @@ progress:
 See: `.planning/PROJECT.md` (updated 2026-04-13)
 
 **Core value:** Reliable local live view and PTZ/control of the RLC-423S from a modern browser without depending on Flash, cloud services, or the old vendor web UI.
-**Current focus:** Phase 02 — browser-live-view-pipeline
+**Current focus:** Phase 03 - ptz-control-surface
 
 ## Current Position
 
 Phase: 3
 Plan: Not started
-Status: Phase complete — ready for verification
+Status: Context gathered - ready for planning
 Last activity: 2026-04-15
 
 Progress: `[##--------]` 20%
@@ -74,8 +74,8 @@ Recent decisions affecting current work:
 - [Phase 02]: Start Fastify by default and keep probe as an explicit subcommand so the browser API becomes the repo entrypoint without losing Phase 1 discovery.
 - [Phase 02]: Keep browser playback adapters thin and consume backend-owned whepUrl, hlsUrl, and snapshotUrl fields directly.
 - [Phase 02]: Expose renderKind, activePlayback, and callback refs from useLiveView so LiveViewerFrame can mount media surfaces without transport logic.
-- [Phase 02]: Keep diagnostics collapsed by default and show only hook-provided mode, reason, and nextFallbackModeId metadata. — This keeps troubleshooting secondary in the Phase 2 viewer while preventing duplicated fallback logic or credential exposure in the browser UI.
-- [Phase 02]: Drive manual mode switching directly from the hook-provided LiveMode list and labels. — This preserves capability gating and sticky manual mode behavior from plan 02-03 instead of rebuilding mode semantics in the UI layer.
+- [Phase 02]: Keep diagnostics collapsed by default and show only hook-provided mode, reason, and nextFallbackModeId metadata. This keeps troubleshooting secondary in the Phase 2 viewer while preventing duplicated fallback logic or credential exposure in the browser UI.
+- [Phase 02]: Drive manual mode switching directly from the hook-provided LiveMode list and labels. This preserves capability gating and sticky manual mode behavior from plan 02-03 instead of rebuilding mode semantics in the UI layer.
 
 ### Pending Todos
 
