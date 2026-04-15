@@ -45,19 +45,34 @@ describe("settings panel flow", () => {
     await user.click(within(timeCard).getByRole("button", { name: "Edit" }));
     await user.clear(within(timeCard).getByLabelText("NTP Server"));
     await user.type(within(timeCard).getByLabelText("NTP Server"), "time.nist.gov");
+    await user.click(within(osdCard).getByRole("button", { name: "Edit" }));
 
     expect(
-      within(timeCard).getByRole("button", { name: "Review Changes" }),
-    ).toBeEnabled();
+      (
+        within(timeCard).getByRole("button", {
+          name: "Review Changes",
+        }) as HTMLButtonElement
+      ).disabled,
+    ).toBe(false);
     expect(
-      within(osdCard).getByRole("button", { name: "Review Changes" }),
-    ).toBeDisabled();
+      (
+        within(osdCard).getByRole("button", {
+          name: "Review Changes",
+        }) as HTMLButtonElement
+      ).disabled,
+    ).toBe(true);
     expect(within(timeCard).getByText("Draft")).not.toBeNull();
 
     await user.click(within(timeCard).getByRole("button", { name: "Review Changes" }));
 
     expect(within(timeCard).getByText("Review Changes")).not.toBeNull();
-    expect(within(timeCard).getByRole("button", { name: "Apply Settings" })).toBeEnabled();
+    expect(
+      (
+        within(timeCard).getByRole("button", {
+          name: "Apply Settings",
+        }) as HTMLButtonElement
+      ).disabled,
+    ).toBe(false);
     expect(within(osdCard).queryByText("Apply Settings")).toBeNull();
   });
 
@@ -70,9 +85,9 @@ describe("settings panel flow", () => {
     await user.click(within(imageCard).getByRole("button", { name: "Edit" }));
 
     const brightnessInput = within(imageCard).getByLabelText("Brightness");
-    expect(brightnessInput).toHaveAttribute("min", "0");
-    expect(brightnessInput).toHaveAttribute("max", "255");
-    expect(brightnessInput).toHaveAttribute("step", "1");
+    expect(brightnessInput.getAttribute("min")).toBe("0");
+    expect(brightnessInput.getAttribute("max")).toBe("255");
+    expect(brightnessInput.getAttribute("step")).toBe("1");
 
     const streamCard = screen.getByTestId("settings-section-stream");
     await user.click(within(streamCard).getByRole("button", { name: "Edit" }));
@@ -81,8 +96,12 @@ describe("settings panel flow", () => {
     expect(within(streamSelect).getByRole("option", { name: "640 x 360" })).not.toBeNull();
     expect(within(streamSelect).getByRole("option", { name: "1280 x 720" })).not.toBeNull();
     expect(
-      within(streamCard).getByRole("button", { name: "Review Changes" }),
-    ).toBeDisabled();
+      (
+        within(streamCard).getByRole("button", {
+          name: "Review Changes",
+        }) as HTMLButtonElement
+      ).disabled,
+    ).toBe(true);
   });
 
   it("shows a verified summary from the server reread after a successful apply", async () => {
@@ -159,7 +178,11 @@ describe("settings panel flow", () => {
     expect(
       within(streamCard).getByText("Sub-stream Resolution"),
     ).not.toBeNull();
-    expect(within(streamCard).getByText("640x360 -> 896x512")).not.toBeNull();
+    expect(
+      within(streamCard).getByText((_, element) =>
+        element?.textContent === "Sub-stream Resolution 640x360 -> 896x512",
+      ),
+    ).not.toBeNull();
   });
 
   it("preserves the draft and attaches field and section errors after a rejected apply", async () => {
@@ -198,8 +221,12 @@ describe("settings panel flow", () => {
     expect(within(osdCard).getByText("Camera Name must be at most 32 characters.")).not.toBeNull();
     expect(within(osdCard).getByDisplayValue("A camera name that is far too long to survive")).not.toBeNull();
     expect(
-      within(osdCard).getByRole("button", { name: "Fix and Review Again" }),
-    ).toBeEnabled();
+      (
+        within(osdCard).getByRole("button", {
+          name: "Fix and Review Again",
+        }) as HTMLButtonElement
+      ).disabled,
+    ).toBe(false);
   });
 });
 
