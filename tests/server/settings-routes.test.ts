@@ -71,7 +71,10 @@ describe("settings routes", () => {
       app.inject({
         method: "POST",
         url: "/api/settings/image/apply",
-        payload: "not-an-object",
+        headers: {
+          "content-type": "application/json",
+        },
+        payload: [],
       }),
       app.inject({
         method: "POST",
