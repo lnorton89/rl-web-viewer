@@ -10,7 +10,7 @@ import type {
   SettingsFieldPrimitive,
   SettingsFieldSpec,
 } from "../../src/types/settings.js";
-import { useSettings } from "../../web/src/hooks/use-settings.js";
+import { SettingsPanel } from "../../web/src/components/SettingsPanel.js";
 import { applySettingsSection, fetchSettingsBootstrap } from "../../web/src/lib/settings-api.js";
 
 vi.mock("../../web/src/lib/settings-api.js", () => ({
@@ -37,7 +37,7 @@ describe("settings panel flow", () => {
   it("keeps drafts, review state, and apply actions scoped to each section", async () => {
     const user = userEvent.setup();
 
-    render(<SettingsHarness />);
+    render(<SettingsPanel />);
 
     const timeCard = await screen.findByTestId("settings-section-time");
     const osdCard = screen.getByTestId("settings-section-osd");
@@ -65,7 +65,7 @@ describe("settings panel flow", () => {
 
     await user.click(within(timeCard).getByRole("button", { name: "Review Changes" }));
 
-    expect(within(timeCard).getByText("Review Changes")).not.toBeNull();
+    expect(within(timeCard).getAllByText("Review Changes").length).toBeGreaterThan(0);
     expect(
       (
         within(timeCard).getByRole("button", {
@@ -79,7 +79,7 @@ describe("settings panel flow", () => {
   it("renders select and numeric controls from shared field metadata and disables review with no diff", async () => {
     const user = userEvent.setup();
 
-    render(<SettingsHarness />);
+    render(<SettingsPanel />);
 
     const imageCard = await screen.findByTestId("settings-section-image");
     await user.click(within(imageCard).getByRole("button", { name: "Edit" }));
@@ -151,7 +151,7 @@ describe("settings panel flow", () => {
       }),
     );
 
-    render(<SettingsHarness />);
+    render(<SettingsPanel />);
 
     const streamCard = await screen.findByTestId("settings-section-stream");
     await user.click(within(streamCard).getByRole("button", { name: "Edit" }));
@@ -170,19 +170,15 @@ describe("settings panel flow", () => {
     await user.click(within(streamCard).getByRole("button", { name: "Apply Settings" }));
 
     await waitFor(() => {
-      expect(
-        within(streamCard).getByText("Verified against camera"),
-      ).not.toBeNull();
+      expect(within(streamCard).getAllByText("Verified against camera").length).toBeGreaterThan(0);
     });
 
+    expect(document.activeElement).toBe(within(streamCard).getByRole("status"));
+
+    expect(within(streamCard).getAllByText("Sub-stream Resolution").length).toBeGreaterThan(0);
     expect(
-      within(streamCard).getByText("Sub-stream Resolution"),
-    ).not.toBeNull();
-    expect(
-      within(streamCard).getByText((_, element) =>
-        element?.textContent === "Sub-stream Resolution 640x360 -> 896x512",
-      ),
-    ).not.toBeNull();
+      streamCard.querySelector(".settings-review-values")?.textContent,
+    ).toContain("640x360 -> 896x512");
   });
 
   it("preserves the draft and attaches field and section errors after a rejected apply", async () => {
@@ -202,7 +198,7 @@ describe("settings panel flow", () => {
       }),
     );
 
-    render(<SettingsHarness />);
+    render(<SettingsPanel />);
 
     const osdCard = await screen.findByTestId("settings-section-osd");
     await user.click(within(osdCard).getByRole("button", { name: "Edit" }));
@@ -229,187 +225,6 @@ describe("settings panel flow", () => {
     ).toBe(false);
   });
 });
-
-function SettingsHarness() {
-  const { isLoading, loadError, sections } = useSettings();
-
-  if (isLoading) {
-    return <p>Loading settings…</p>;
-  }
-
-  if (loadError) {
-    return <p>{loadError}</p>;
-  }
-
-  return (
-    <div>
-      {sections.map((section) => {
-        const supportLabel = section.editable ? "Safe Settings" : "Inspect Only";
-        const reviewButtonLabel =
-          section.mode === "error" ? "Fix and Review Again" : "Review Changes";
-
-        return (
-          <section data-testid={`settings-section-${section.id}`} key={section.id}>
-            <p>{supportLabel}</p>
-            <h2>{section.title}</h2>
-            <p>{section.description}</p>
-            <span>{section.badgeLabel}</span>
-            <div {...section.statusProps}>
-              {section.sectionError ? <p>{section.sectionError}</p> : null}
-              {section.mode === "review" ? <p>Review Changes</p> : null}
-              {section.mode === "verified" ? <p>Verified against camera</p> : null}
-              {section.mode === "verified" && section.verifiedSummary?.noCameraChangeDetected ? (
-                <p>No camera change detected</p>
-              ) : null}
-              {section.mode === "review" && section.id === "stream" ? (
-                <p>Applying stream changes may briefly reset live playback.</p>
-              ) : null}
-              {section.verifiedSummary?.rows.map((row) => (
-                <p key={`${section.id}-${row.fieldPath}`}>
-                  {row.label}
-                  {" "}
-                  {formatValue(row.beforeValue)}
-                  {" -> "}
-                  {formatValue(row.afterValue)}
-                </p>
-              ))}
-              {section.reviewRows.map((row) => (
-                <p key={`${section.id}-${row.fieldPath}-review`}>
-                  {row.label}
-                  {" "}
-                  {formatValue(row.beforeValue)}
-                  {" -> "}
-                  {formatValue(row.afterValue)}
-                </p>
-              ))}
-            </div>
-
-            {section.fieldViews.map((field) => (
-              <label key={field.fieldSpec.fieldPath}>
-                <span>{field.fieldSpec.label}</span>
-                {renderField(section, field.fieldSpec, field.value)}
-                {field.error ? <span>{field.error}</span> : null}
-              </label>
-            ))}
-
-            <div>
-              {section.editable ? (
-                <>
-                  {section.mode === "read" || section.mode === "verified" ? (
-                    <button type="button" onClick={() => void section.startEditing()}>
-                      {section.mode === "verified" ? "Edit Again" : "Edit"}
-                    </button>
-                  ) : null}
-                  {section.mode === "editing" || section.mode === "error" ? (
-                    <>
-                      <button type="button" onClick={() => section.cancelEditing()}>
-                        Cancel
-                      </button>
-                      <button
-                        type="button"
-                        disabled={!section.canReview}
-                        onClick={() => section.enterReview()}
-                      >
-                        {reviewButtonLabel}
-                      </button>
-                    </>
-                  ) : null}
-                  {section.mode === "review" ? (
-                    <>
-                      <button type="button" onClick={() => section.returnToEditing()}>
-                        Back to Editing
-                      </button>
-                      <button
-                        type="button"
-                        disabled={section.mode === "applying"}
-                        onClick={() => void section.apply()}
-                      >
-                        Apply Settings
-                      </button>
-                    </>
-                  ) : null}
-                </>
-              ) : (
-                <p>Read only</p>
-              )}
-            </div>
-          </section>
-        );
-      })}
-    </div>
-  );
-}
-
-function renderField(
-  section: ReturnType<typeof useSettings>["sections"][number],
-  fieldSpec: SettingsFieldSpec,
-  value: SettingsFieldPrimitive,
-) {
-  const disabled = !section.editable || section.mode === "read" || section.mode === "review" || section.mode === "verified";
-
-  switch (fieldSpec.kind) {
-    case "toggle":
-      return (
-        <input
-          checked={Boolean(value)}
-          disabled={disabled}
-          type="checkbox"
-          onChange={(event) => {
-            section.updateDraft(fieldSpec.fieldPath, event.currentTarget.checked);
-          }}
-        />
-      );
-    case "number":
-      return (
-        <input
-          aria-label={fieldSpec.label}
-          disabled={disabled}
-          max={fieldSpec.constraints?.max}
-          min={fieldSpec.constraints?.min}
-          step={fieldSpec.constraints?.step}
-          type={fieldSpec.sectionId === "image" ? "range" : "number"}
-          value={typeof value === "number" ? String(value) : ""}
-          onChange={(event) => {
-            section.updateDraft(fieldSpec.fieldPath, Number(event.currentTarget.value));
-          }}
-        />
-      );
-    case "select":
-      return (
-        <select
-          aria-label={fieldSpec.label}
-          disabled={disabled}
-          value={String(value)}
-          onChange={(event) => {
-            const nextValue =
-              fieldSpec.options?.find((option) => String(option.value) === event.currentTarget.value)?.value ??
-              event.currentTarget.value;
-            section.updateDraft(fieldSpec.fieldPath, nextValue);
-          }}
-        >
-          {fieldSpec.options?.map((option) => (
-            <option key={String(option.value)} value={String(option.value)}>
-              {option.label}
-            </option>
-          ))}
-        </select>
-      );
-    case "text":
-      return (
-        <input
-          aria-label={fieldSpec.label}
-          disabled={disabled}
-          type="text"
-          value={typeof value === "string" ? value : ""}
-          onChange={(event) => {
-            section.updateDraft(fieldSpec.fieldPath, event.currentTarget.value);
-          }}
-        />
-      );
-    case "read-only":
-      return <span>{formatValue(value)}</span>;
-  }
-}
 
 function createBootstrap(): SettingsBootstrap {
   return {

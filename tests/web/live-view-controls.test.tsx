@@ -13,6 +13,10 @@ vi.mock("../../web/src/components/PtzPanel.js", () => ({
   PtzPanel: () => <div data-testid="ptz-panel" />,
 }));
 
+vi.mock("../../web/src/components/SettingsPanel.js", () => ({
+  SettingsPanel: () => <div data-testid="settings-panel" />,
+}));
+
 const useLiveViewMock = vi.mocked(useLiveView);
 
 describe("live view controls", () => {

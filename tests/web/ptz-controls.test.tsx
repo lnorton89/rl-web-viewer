@@ -26,6 +26,10 @@ vi.mock("../../web/src/hooks/use-live-view.js", () => ({
   useLiveView: vi.fn(),
 }));
 
+vi.mock("../../web/src/components/SettingsPanel.js", () => ({
+  SettingsPanel: () => <div data-testid="settings-panel" />,
+}));
+
 const fetchPtzBootstrapMock = vi.mocked(fetchPtzBootstrap);
 const startPtzMotionMock = vi.mocked(startPtzMotion);
 const stopPtzMotionMock = vi.mocked(stopPtzMotion);

@@ -2,6 +2,7 @@ import { DiagnosticsDisclosure } from "./components/DiagnosticsDisclosure.js";
 import { LiveViewerFrame } from "./components/LiveViewerFrame.js";
 import { ModeSwitcher } from "./components/ModeSwitcher.js";
 import { PtzPanel } from "./components/PtzPanel.js";
+import { SettingsPanel } from "./components/SettingsPanel.js";
 import { useLiveView } from "./hooks/use-live-view.js";
 
 export default function App() {
@@ -51,6 +52,8 @@ export default function App() {
           modes={modes}
           onSelectMode={selectMode}
         />
+
+        <SettingsPanel />
 
         <DiagnosticsDisclosure
           currentModeId={currentModeId}
