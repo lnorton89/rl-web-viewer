@@ -1,4 +1,6 @@
+import { DiagnosticsDisclosure } from "./components/DiagnosticsDisclosure.js";
 import { LiveViewerFrame } from "./components/LiveViewerFrame.js";
+import { ModeSwitcher } from "./components/ModeSwitcher.js";
 import { useLiveView } from "./hooks/use-live-view.js";
 
 export default function App() {
@@ -11,6 +13,7 @@ export default function App() {
     nextFallbackModeId,
     renderKind,
     retry,
+    selectMode,
     state,
   } = useLiveView();
 
@@ -39,36 +42,19 @@ export default function App() {
           state={state}
         />
 
-        <section className="viewer-support" aria-label="Live view status">
-          <div>
-            <p className="support-label">Current mode</p>
-            <p className="support-value">{currentMode?.label ?? "None"}</p>
-          </div>
-          <div>
-            <p className="support-label">Next fallback</p>
-            <p className="support-value">
-              {nextFallbackModeId ?? "No fallback queued"}
-            </p>
-          </div>
-          <div>
-            <p className="support-label">Surface</p>
-            <p className="support-value">
-              {renderKind === "video" ? "Video transport" : "Snapshot image"}
-            </p>
-          </div>
-        </section>
+        <ModeSwitcher
+          currentModeId={currentModeId}
+          modes={modes}
+          onSelectMode={selectMode}
+        />
 
-        <section className="diagnostics-preview" aria-labelledby="diag-heading">
-          <div>
-            <p className="support-label">Diagnostics</p>
-            <h2 id="diag-heading">Transport details stay secondary</h2>
-          </div>
-          <p className="diagnostics-copy">
-            Current mode, short failure reasons, and the planned fallback stay
-            available below the viewer without exposing camera credentials or
-            raw source URLs.
-          </p>
-        </section>
+        <DiagnosticsDisclosure
+          currentModeId={currentModeId}
+          currentModeLabel={currentMode?.label ?? "None"}
+          nextFallbackModeId={nextFallbackModeId}
+          reason={state.reason}
+          renderKind={renderKind}
+        />
       </main>
     </div>
   );
