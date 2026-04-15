@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: executing
-stopped_at: Completed 03-02-PLAN.md
-last_updated: "2026-04-15T06:44:13.319Z"
+status: verifying
+stopped_at: Completed 03-03-PLAN.md
+last_updated: "2026-04-15T06:57:38.112Z"
 last_activity: 2026-04-15
 progress:
   total_phases: 5
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 10
-  completed_plans: 9
+  completed_plans: 10
   percent: 20
 ---
 
@@ -27,7 +27,7 @@ See: `.planning/PROJECT.md` (updated 2026-04-13)
 
 Phase: 03 (ptz-control-surface) — EXECUTING
 Plan: 3 of 3
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-04-15
 
 Progress: `[##--------]` 20%
@@ -57,6 +57,7 @@ Progress: `[##--------]` 20%
 | Phase 02 P04 | 4 min | 2 tasks | 9 files |
 | Phase 03 P01 | 5 min | 2 tasks | 5 files |
 | Phase 03 P02 | 4 min | 2 tasks | 4 files |
+| Phase 03 P03 | 9 min | 2 tasks | 8 files |
 
 ## Accumulated Context
 
@@ -82,6 +83,8 @@ Recent decisions affecting current work:
 - [Phase 03]: Own PTZ stop safety in the backend with a 5000ms watchdog and 250ms zoom pulse instead of duplicating timing rules in later layers.
 - [Phase 03]: Keep PTZ browser traffic on the existing Fastify control plane so the dashboard never needs camera credentials, tokens, or raw CGI payloads.
 - [Phase 03]: Gate motion, stop, zoom, and preset recall in the route layer from the PTZ bootstrap capability snapshot so unsupported actions fail before reaching the adapter.
+- [Phase 03]: Keep the PTZ interaction lifecycle inside usePtzControls() so App.tsx only owns viewer/dashboard composition.
+- [Phase 03]: Attach PTZ beside the viewer at desktop widths and stack it directly below on smaller screens to keep the control surface attached to live view.
 
 ### Pending Todos
 
@@ -93,6 +96,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-15T06:44:13.312Z
-Stopped at: Completed 03-02-PLAN.md
+Last session: 2026-04-15T06:57:38.108Z
+Stopped at: Completed 03-03-PLAN.md
 Resume file: None
