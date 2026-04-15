@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: verifying
-stopped_at: Completed 03-03-PLAN.md
-last_updated: "2026-04-15T06:57:38.112Z"
+status: executing
+stopped_at: Completed 04-01-PLAN.md
+last_updated: "2026-04-15T19:47:59.733Z"
 last_activity: 2026-04-15
 progress:
   total_phases: 5
   completed_phases: 3
-  total_plans: 10
-  completed_plans: 10
+  total_plans: 13
+  completed_plans: 11
   percent: 20
 ---
 
@@ -21,13 +21,13 @@ progress:
 See: `.planning/PROJECT.md` (updated 2026-04-13)
 
 **Core value:** Reliable local live view and PTZ/control of the RLC-423S from a modern browser without depending on Flash, cloud services, or the old vendor web UI.
-**Current focus:** Phase 03 — ptz-control-surface
+**Current focus:** Phase 04 — settings-safe-configuration
 
 ## Current Position
 
-Phase: 03 (ptz-control-surface) — EXECUTING
-Plan: 3 of 3
-Status: Phase complete — ready for verification
+Phase: 04 (settings-safe-configuration) — EXECUTING
+Plan: 2 of 3
+Status: Ready to execute
 Last activity: 2026-04-15
 
 Progress: `[##--------]` 20%
@@ -58,6 +58,7 @@ Progress: `[##--------]` 20%
 | Phase 03 P01 | 5 min | 2 tasks | 5 files |
 | Phase 03 P02 | 4 min | 2 tasks | 4 files |
 | Phase 03 P03 | 9 min | 2 tasks | 8 files |
+| Phase 04-settings-safe-configuration P01 | 14min | 2 tasks | 9 files |
 
 ## Accumulated Context
 
@@ -85,6 +86,9 @@ Recent decisions affecting current work:
 - [Phase 03]: Gate motion, stop, zoom, and preset recall in the route layer from the PTZ bootstrap capability snapshot so unsupported actions fail before reaching the adapter.
 - [Phase 03]: Keep the PTZ interaction lifecycle inside usePtzControls() so App.tsx only owns viewer/dashboard composition.
 - [Phase 03]: Attach PTZ beside the viewer at desktop widths and stack it directly below on smaller screens to keep the control surface attached to live view.
+- [Phase 04-settings-safe-configuration]: Keep the safe settings boundary explicit in src/types/settings.ts so backend validation and React controls consume one field metadata source.
+- [Phase 04-settings-safe-configuration]: Use a hard setter matrix: time and osd stay patch-friendly while image and stream always re-read and send full camera objects.
+- [Phase 04-settings-safe-configuration]: Treat camera rereads as the source of truth for success and fail writes when verification shows no camera change.
 
 ### Pending Todos
 
@@ -96,6 +100,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-15T06:57:38.108Z
-Stopped at: Completed 03-03-PLAN.md
+Last session: 2026-04-15T19:47:59.728Z
+Stopped at: Completed 04-01-PLAN.md
 Resume file: None
