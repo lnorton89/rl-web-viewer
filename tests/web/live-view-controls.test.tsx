@@ -9,6 +9,10 @@ vi.mock("../../web/src/hooks/use-live-view.js", () => ({
   useLiveView: vi.fn(),
 }));
 
+vi.mock("../../web/src/components/PtzPanel.js", () => ({
+  PtzPanel: () => <div data-testid="ptz-panel" />,
+}));
+
 const useLiveViewMock = vi.mocked(useLiveView);
 
 describe("live view controls", () => {

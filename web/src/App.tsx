@@ -1,6 +1,7 @@
 import { DiagnosticsDisclosure } from "./components/DiagnosticsDisclosure.js";
 import { LiveViewerFrame } from "./components/LiveViewerFrame.js";
 import { ModeSwitcher } from "./components/ModeSwitcher.js";
+import { PtzPanel } from "./components/PtzPanel.js";
 import { useLiveView } from "./hooks/use-live-view.js";
 
 export default function App() {
@@ -31,16 +32,19 @@ export default function App() {
           </p>
         </header>
 
-        <LiveViewerFrame
-          activePlayback={activePlayback}
-          bindImageElement={bindImageElement}
-          bindVideoElement={bindVideoElement}
-          currentModeLabel={currentMode?.label ?? "Awaiting Mode"}
-          nextFallbackModeId={nextFallbackModeId}
-          onRetry={retry}
-          renderKind={renderKind}
-          state={state}
-        />
+        <div className="viewer-ptz-cluster">
+          <LiveViewerFrame
+            activePlayback={activePlayback}
+            bindImageElement={bindImageElement}
+            bindVideoElement={bindVideoElement}
+            currentModeLabel={currentMode?.label ?? "Awaiting Mode"}
+            nextFallbackModeId={nextFallbackModeId}
+            onRetry={retry}
+            renderKind={renderKind}
+            state={state}
+          />
+          <PtzPanel />
+        </div>
 
         <ModeSwitcher
           currentModeId={currentModeId}

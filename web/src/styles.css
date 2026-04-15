@@ -270,7 +270,8 @@ a:focus-visible {
 .viewer-support,
 .diagnostics-preview,
 .mode-switcher,
-.diagnostics-disclosure {
+.diagnostics-disclosure,
+.ptz-panel {
   display: grid;
   gap: 16px;
   padding: 24px;
@@ -283,6 +284,12 @@ a:focus-visible {
 
 .viewer-support {
   grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.viewer-ptz-cluster {
+  display: grid;
+  gap: 24px;
+  align-items: start;
 }
 
 .section-heading {
@@ -360,6 +367,134 @@ a:focus-visible {
   line-height: 1.5;
 }
 
+.ptz-panel {
+  align-self: stretch;
+}
+
+.ptz-status-copy,
+.ptz-status-meta,
+.ptz-group-copy,
+.ptz-panel-unsupported {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.ptz-status-copy {
+  color: #eef5f3;
+}
+
+.ptz-status-copy[data-error="true"],
+.ptz-status-meta {
+  color: var(--color-danger);
+}
+
+.ptz-group-copy,
+.ptz-panel-unsupported {
+  color: var(--color-muted);
+}
+
+.ptz-control-groups {
+  display: grid;
+  gap: 24px;
+}
+
+.ptz-motion-group,
+.ptz-presets,
+.ptz-zoom-group {
+  display: grid;
+  gap: 12px;
+}
+
+.ptz-motion-layout {
+  display: grid;
+  gap: 16px;
+}
+
+.ptz-direction-pad {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.ptz-control-spacer {
+  min-height: 56px;
+}
+
+.ptz-control-button,
+.ptz-preset-button {
+  min-height: 56px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.05);
+  color: #eef5f3;
+  cursor: pointer;
+  transition:
+    background-color 200ms ease,
+    border-color 200ms ease,
+    color 200ms ease,
+    transform 150ms ease,
+    box-shadow 150ms ease;
+}
+
+.ptz-control-button[data-active="true"],
+.ptz-preset-button[data-active="true"] {
+  background: rgba(99, 199, 178, 0.2);
+  border-color: rgba(99, 199, 178, 0.52);
+  box-shadow: inset 0 0 0 1px rgba(99, 199, 178, 0.24);
+}
+
+.ptz-control-button:hover:not(:disabled),
+.ptz-preset-button:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.22);
+}
+
+.ptz-control-button:active:not(:disabled),
+.ptz-preset-button:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.ptz-stop-button {
+  background: rgba(198, 90, 90, 0.12);
+  border-color: rgba(198, 90, 90, 0.44);
+  color: #ffe4e4;
+}
+
+.ptz-stop-button:hover:not(:disabled) {
+  background: rgba(198, 90, 90, 0.18);
+  border-color: rgba(198, 90, 90, 0.58);
+}
+
+.ptz-zoom-button {
+  min-height: 44px;
+}
+
+.ptz-preset-grid {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.ptz-control-button:disabled,
+.ptz-preset-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+@media (min-width: 980px) {
+  .viewer-ptz-cluster {
+    grid-template-columns: minmax(0, 1.6fr) minmax(320px, 360px);
+  }
+
+  .ptz-motion-layout {
+    grid-template-columns: minmax(0, 1fr) minmax(120px, 132px);
+    align-items: start;
+  }
+}
+
 @media (max-width: 900px) {
   .app-shell {
     padding: 48px 16px 32px;
@@ -391,5 +526,9 @@ a:focus-visible {
   .viewer-frame,
   .viewer-surface {
     min-height: 48vh;
+  }
+
+  .ptz-preset-grid {
+    grid-template-columns: 1fr;
   }
 }

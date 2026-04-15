@@ -15,7 +15,8 @@ import {
   stopPtzMotion,
 } from "../lib/ptz-api.js";
 
-const DEFAULT_STATUS_COPY = "PTZ ready.";
+const BOOTSTRAP_STATUS_COPY = "Loading PTZ...";
+const READY_STATUS_COPY = "PTZ ready.";
 const HOLD_HELPER_COPY = "Hold to move. Release to stop.";
 const UNSUPPORTED_COPY = "PTZ is not available for this camera profile.";
 const COMMAND_FAILURE_COPY =
@@ -73,7 +74,7 @@ export function usePtzControls(): UsePtzControlsResult {
   const [busyAction, setBusyAction] = useState<PtzBusyAction>({
     kind: "bootstrapping",
   });
-  const [statusText, setStatusText] = useState(DEFAULT_STATUS_COPY);
+  const [statusText, setStatusText] = useState(BOOTSTRAP_STATUS_COPY);
   const [errorText, setErrorText] = useState<string | null>(null);
 
   const motionSessionRef = useRef<MotionSession | null>(null);
@@ -210,7 +211,7 @@ export function usePtzControls(): UsePtzControlsResult {
         setPresets(bootstrap.presets);
         setBusyAction(null);
         setStatusText(
-          bootstrap.supportsPtzControl ? HOLD_HELPER_COPY : UNSUPPORTED_COPY,
+          bootstrap.supportsPtzControl ? READY_STATUS_COPY : UNSUPPORTED_COPY,
         );
         setErrorText(null);
       })
@@ -355,7 +356,7 @@ export function usePtzControls(): UsePtzControlsResult {
 
       try {
         await pulsePtzZoom(direction);
-        setTransientStatus(DEFAULT_STATUS_COPY);
+        setTransientStatus(READY_STATUS_COPY);
       } catch (error: unknown) {
         setStatusText(COMMAND_FAILURE_COPY);
         setErrorText(getErrorMessage(error, COMMAND_FAILURE_COPY));
