@@ -1,0 +1,20 @@
+{
+  "request": [
+    {
+      "cmd": "PtzCtrl",
+      "action": 0,
+      "param": {
+        "channel": 0
+      }
+    }
+  ],
+  "response": [
+    {
+      "cmd": "PtzCtrl",
+      "code": 0,
+      "value": {
+        "rspCode": 200
+      }
+    }
+  ]
+}

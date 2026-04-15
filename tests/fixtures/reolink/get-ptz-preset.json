@@ -1,0 +1,36 @@
+{
+  "request": [
+    {
+      "cmd": "GetPtzPreset",
+      "action": 1,
+      "param": {
+        "channel": 0
+      }
+    }
+  ],
+  "response": [
+    {
+      "cmd": "GetPtzPreset",
+      "code": 0,
+      "value": {
+        "PtzPreset": [
+          {
+            "id": 1,
+            "name": "Home",
+            "enable": 1
+          },
+          {
+            "id": 3,
+            "name": "North Gate",
+            "enable": 0
+          },
+          {
+            "id": 5,
+            "name": "Loading Dock",
+            "enable": 1
+          }
+        ]
+      }
+    }
+  ]
+}
