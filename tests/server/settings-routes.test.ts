@@ -1,7 +1,14 @@
+import { mkdtemp, writeFile } from "node:fs/promises";
+import os from "node:os";
+import path from "node:path";
+
 import Fastify from "fastify";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import { createServer } from "../../src/server/create-server.js";
 import { settingsRoutes } from "../../src/server/routes/settings.js";
+import type { LiveViewBootstrap } from "../../src/types/live-view.js";
+import type { PtzBootstrap, PtzService } from "../../src/types/ptz.js";
 import {
   EDITABLE_SETTINGS_SECTION_IDS,
   SETTINGS_SECTION_IDS,
@@ -26,7 +33,7 @@ describe("settings routes", () => {
   });
 
   it("returns a browser-safe settings bootstrap with editable and read-only sections", async () => {
-    const service = createSettingsService();
+    const { service } = createSettingsService();
     const app = await createApp(service);
 
     const response = await app.inject({
@@ -44,8 +51,11 @@ describe("settings routes", () => {
 
   it("rejects unsafe browser-safe bootstrap payloads", async () => {
     const unsafeBootstrap = createBootstrap();
-    unsafeBootstrap.sections[1]!.value.osdChannel.name = "rtsp://unsafe";
-    const service = createSettingsService({
+    const osdSection = unsafeBootstrap.sections.find(
+      (section): section is SettingsSection<"osd"> => section.id === "osd",
+    );
+    osdSection!.value.osdChannel.name = "rtsp://unsafe";
+    const { service } = createSettingsService({
       bootstrap: unsafeBootstrap,
     });
     const app = await createApp(service);
@@ -59,7 +69,7 @@ describe("settings routes", () => {
   });
 
   it("returns 400 for malformed params or body shape and 409 for read-only sections", async () => {
-    const service = createSettingsService();
+    const { service } = createSettingsService();
     const app = await createApp(service);
 
     const [invalidParam, malformedBody, readOnlySection] = await Promise.all([
@@ -109,7 +119,7 @@ describe("settings routes", () => {
   });
 
   it("returns 422 field errors when shared metadata validation rejects a draft", async () => {
-    const service = createSettingsService();
+    const { service, applySection } = createSettingsService();
     const app = await createApp(service);
 
     const response = await app.inject({
@@ -135,11 +145,11 @@ describe("settings routes", () => {
         },
       ],
     });
-    expect(service.applySection).not.toHaveBeenCalled();
+    expect(applySection).not.toHaveBeenCalled();
   });
 
   it("returns 422 section-level failures when the settings service rejects a write", async () => {
-    const service = createSettingsService({
+    const { service } = createSettingsService({
       applyResult: {
         ok: false,
         sectionId: "stream",
@@ -199,7 +209,7 @@ describe("settings routes", () => {
         },
       ],
     };
-    const service = createSettingsService({
+    const { service, applySection } = createSettingsService({
       applyResult,
     });
     const app = await createApp(service);
@@ -214,8 +224,144 @@ describe("settings routes", () => {
 
     expect(response.statusCode).toBe(200);
     expect(response.json()).toEqual(applyResult);
-    expect(service.applySection).toHaveBeenCalledWith("image", {
+    expect(applySection).toHaveBeenCalledWith("image", {
       contrast: 140,
+    });
+  });
+
+  it("mounts settings routes through createServer and preserves /api/live-view and /api/ptz", async () => {
+    const staticRoot = await createStaticRoot();
+    const { service: settingsService } = createSettingsService({
+      applyResult: {
+        ok: true,
+        sectionId: "image",
+        verified: true,
+        before: createSectionValues().image,
+        after: {
+          ...createSectionValues().image,
+          contrast: 140,
+        },
+        changedFields: [
+          {
+            fieldPath: "image.contrast",
+            label: "Contrast",
+            beforeValue: 96,
+            afterValue: 140,
+            verified: true,
+          },
+        ],
+      },
+    });
+    const ptzService = createPtzService();
+    const app = await createServer({
+      staticRoot,
+      liveView: {
+        buildLiveViewBootstrap: async () => createLiveViewBootstrap(),
+        fetchSnapshot: async () => ({
+          body: new Uint8Array([1, 2, 3]),
+          contentType: "image/jpeg",
+        }),
+        getMediaRelayHealth: () => ({
+          relay: "ready",
+          reason: null,
+        }),
+      },
+      ptz: {
+        createPtzService: () => ptzService,
+      },
+      settings: {
+        createSettingsService: () => settingsService,
+      },
+    });
+    apps.push(app);
+
+    const [
+      liveViewResponse,
+      ptzResponse,
+      settingsBootstrapResponse,
+      settingsSuccessResponse,
+      settingsFailureResponse,
+    ] = await Promise.all([
+      app.inject({
+        method: "GET",
+        url: "/api/live-view",
+      }),
+      app.inject({
+        method: "GET",
+        url: "/api/ptz",
+      }),
+      app.inject({
+        method: "GET",
+        url: "/api/settings",
+      }),
+      app.inject({
+        method: "POST",
+        url: "/api/settings/image/apply",
+        payload: {
+          contrast: 140,
+        },
+      }),
+      app.inject({
+        method: "POST",
+        url: "/api/settings/stream/apply",
+        payload: {
+          subStream: {
+            profile: "Ultra",
+          },
+        },
+      }),
+    ]);
+
+    expect(liveViewResponse.statusCode).toBe(200);
+    expect(liveViewResponse.json<LiveViewBootstrap>()).toEqual(
+      createLiveViewBootstrap(),
+    );
+
+    expect(ptzResponse.statusCode).toBe(200);
+    expect(ptzResponse.json<PtzBootstrap>()).toEqual(createPtzBootstrap());
+
+    expect(settingsBootstrapResponse.statusCode).toBe(200);
+    expect(settingsBootstrapResponse.json<SettingsBootstrap>()).toEqual(
+      createBootstrap(),
+    );
+    expect(settingsBootstrapResponse.body).not.toContain("password");
+    expect(settingsBootstrapResponse.body).not.toContain("cgi-bin/api.cgi");
+
+    expect(settingsSuccessResponse.statusCode).toBe(200);
+    expect(settingsSuccessResponse.json()).toEqual({
+      ok: true,
+      sectionId: "image",
+      verified: true,
+      before: createSectionValues().image,
+      after: {
+        ...createSectionValues().image,
+        contrast: 140,
+      },
+      changedFields: [
+        {
+          fieldPath: "image.contrast",
+          label: "Contrast",
+          beforeValue: 96,
+          afterValue: 140,
+          verified: true,
+        },
+      ],
+    });
+
+    expect(settingsFailureResponse.statusCode).toBe(422);
+    expect(settingsFailureResponse.json()).toEqual({
+      ok: false,
+      sectionId: "stream",
+      verified: false,
+      code: "validation",
+      message: "One or more fields failed validation.",
+      fieldErrors: [
+        {
+          fieldPath: "stream.subStream.profile",
+          message: "Sub-stream Profile must match one of the allowed options.",
+          code: "invalid-value",
+        },
+      ],
     });
   });
 });
@@ -234,34 +380,51 @@ function createSettingsService(input: {
   applyResult?:
     | SettingsApplySuccess<EditableSettingsSectionId>
     | SettingsApplyFailure<SettingsSectionId>;
-} = {}): SettingsService & {
+} = {}): {
+  service: SettingsService;
   getBootstrap: ReturnType<typeof vi.fn<() => Promise<SettingsBootstrap>>>;
-  applySection: ReturnType<typeof vi.fn<SettingsService["applySection"]>>;
-} {
-  const bootstrap = input.bootstrap ?? createBootstrap();
-
-  return {
-    getBootstrap: vi.fn(async () => structuredClone(bootstrap)),
-    applySection: vi.fn(
-      async (
-        _sectionId: EditableSettingsSectionId,
-        _draft: unknown,
-      ): Promise<
+  applySection: ReturnType<
+    typeof vi.fn<
+      (
+        sectionId: EditableSettingsSectionId,
+        draft: unknown,
+      ) => Promise<
         | SettingsApplySuccess<EditableSettingsSectionId>
         | SettingsApplyFailure<SettingsSectionId>
-      > =>
-        structuredClone(
-          input.applyResult ??
-            ({
-              ok: true,
-              sectionId: "image",
-              verified: true,
-              before: createSectionValues().image,
-              after: createSectionValues().image,
-              changedFields: [],
-            } satisfies SettingsApplySuccess<"image">),
-        ),
-    ) as ReturnType<typeof vi.fn<SettingsService["applySection"]>>,
+      >
+    >
+  >;
+} {
+  const bootstrap = input.bootstrap ?? createBootstrap();
+  const getBootstrap = vi.fn(async () => structuredClone(bootstrap));
+  const applySection = vi.fn(
+    async (
+      _sectionId: EditableSettingsSectionId,
+      _draft: unknown,
+    ): Promise<
+      | SettingsApplySuccess<EditableSettingsSectionId>
+      | SettingsApplyFailure<SettingsSectionId>
+    > =>
+      structuredClone(
+        input.applyResult ??
+          ({
+            ok: true,
+            sectionId: "image",
+            verified: true,
+            before: createSectionValues().image,
+            after: createSectionValues().image,
+            changedFields: [],
+          } satisfies SettingsApplySuccess<"image">),
+      ),
+  );
+
+  return {
+    service: {
+      getBootstrap,
+      applySection: applySection as SettingsService["applySection"],
+    },
+    getBootstrap,
+    applySection,
   };
 }
 
@@ -379,6 +542,115 @@ function createSectionValues(): SettingsSectionValueMap {
       nr3d: 0,
     },
   };
+}
+
+function createPtzBootstrap(
+  overrides: Partial<PtzBootstrap> = {},
+): PtzBootstrap {
+  return {
+    supportsPtzControl: true,
+    supportsPtzPreset: true,
+    hasVisibleStop: true,
+    stopDeadlineMs: 5000,
+    zoomPulseMs: 250,
+    presets: [
+      {
+        id: 2,
+        name: "Driveway",
+      },
+    ],
+    ...overrides,
+  };
+}
+
+function createPtzService(
+  bootstrap: PtzBootstrap = createPtzBootstrap(),
+): PtzService {
+  return {
+    getBootstrap: vi.fn(async () => bootstrap),
+    startMotion: vi.fn(async (direction) => ({
+      direction,
+      stopDeadlineMs: bootstrap.stopDeadlineMs,
+    })),
+    stopMotion: vi.fn(async (reason) => ({
+      stopped: true,
+      reason,
+    })),
+    pulseZoom: vi.fn(async (direction) => ({
+      direction,
+      pulseMs: bootstrap.zoomPulseMs,
+    })),
+    recallPreset: vi.fn(async (presetId) => ({
+      presetId,
+    })),
+  };
+}
+
+function createLiveViewBootstrap(): LiveViewBootstrap {
+  return {
+    preferredModeId: "webrtc:main",
+    fallbackOrder: ["webrtc:main", "hls:sub", "snapshot:main"],
+    modes: [
+      {
+        id: "webrtc:main",
+        label: "WebRTC Main",
+        quality: "main",
+        transport: "webrtc",
+        enabled: true,
+        playback: {
+          whepUrl: "http://127.0.0.1:8889/camera_main/whep",
+          hlsUrl: null,
+          snapshotUrl: "/api/live-view/snapshot/main",
+        },
+      },
+      {
+        id: "hls:sub",
+        label: "HLS Sub",
+        quality: "sub",
+        transport: "hls",
+        enabled: true,
+        playback: {
+          whepUrl: null,
+          hlsUrl: "http://127.0.0.1:8888/camera_sub/index.m3u8",
+          snapshotUrl: "/api/live-view/snapshot/sub",
+        },
+      },
+      {
+        id: "snapshot:main",
+        label: "Snapshot Main",
+        quality: "main",
+        transport: "snapshot",
+        enabled: true,
+        playback: {
+          whepUrl: null,
+          hlsUrl: null,
+          snapshotUrl: "/api/live-view/snapshot/main",
+        },
+      },
+    ],
+    diagnostics: {
+      state: "connecting",
+      currentModeId: "webrtc:main",
+      nextFallbackModeId: "hls:sub",
+      reason: null,
+    },
+  };
+}
+
+async function createStaticRoot(): Promise<string> {
+  const staticRoot = await mkdtemp(path.join(os.tmpdir(), "reolink-static-"));
+  const webDirectory = path.join(staticRoot, "web");
+
+  await import("node:fs/promises").then(({ mkdir }) =>
+    mkdir(webDirectory, { recursive: true }),
+  );
+  await writeFile(
+    path.join(webDirectory, "index.html"),
+    "<!doctype html><html><body><div id=\"app\"></div></body></html>",
+    "utf8",
+  );
+
+  return staticRoot;
 }
 
 function getValueAtPath(root: unknown, path: string): string | number | boolean | null {

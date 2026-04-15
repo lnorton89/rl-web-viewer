@@ -10,10 +10,15 @@ import {
   type LiveViewRouteDependencies,
 } from "./routes/live-view.js";
 import { ptzRoutes, type PtzRouteDependencies } from "./routes/ptz.js";
+import {
+  settingsRoutes,
+  type SettingsRouteDependencies,
+} from "./routes/settings.js";
 
 export type CreateServerOptions = {
   liveView?: LiveViewRouteDependencies;
   ptz?: PtzRouteDependencies;
+  settings?: SettingsRouteDependencies;
   staticRoot?: string;
 };
 
@@ -48,6 +53,7 @@ export async function createServer(
 
   await app.register(liveViewRoutes, options.liveView ?? {});
   await app.register(ptzRoutes, options.ptz ?? {});
+  await app.register(settingsRoutes, options.settings ?? {});
 
   return app;
 }

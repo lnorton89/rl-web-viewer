@@ -43,7 +43,9 @@ type DraftValidationResult<TId extends EditableSettingsSectionId> =
       failure: SettingsRouteFailure<TId>;
     };
 
-type DraftTree = Record<string, DraftTree | SettingsFieldSpec>;
+interface DraftTree {
+  [key: string]: DraftTree | SettingsFieldSpec;
+}
 
 const paramsSchema = z.object({
   sectionId: z.string(),
