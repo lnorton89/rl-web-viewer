@@ -26,7 +26,7 @@
 
 ### Settings & Configuration
 
-- [ ] **CONF-01**: User can inspect current camera settings exposed by the app for the connected RLC-423S.
+- [x] **CONF-01**: User can inspect current camera settings exposed by the app for the connected RLC-423S.
 - [x] **CONF-02**: User can edit a safe v1 subset of camera settings from the dashboard.
 - [x] **CONF-03**: User can submit a settings change and see exact validation or API failure feedback if the camera rejects it.
 - [x] **CONF-04**: User can refresh settings after a write and confirm the camera reports the updated values.
@@ -82,7 +82,7 @@
 | PTZ-01 | Phase 3 | Complete |
 | PTZ-02 | Phase 3 | Complete |
 | PTZ-03 | Phase 3 | Complete |
-| CONF-01 | Phase 4 | Pending |
+| CONF-01 | Phase 4 | Complete |
 | CONF-02 | Phase 4 | Complete |
 | CONF-03 | Phase 4 | Complete |
 | CONF-04 | Phase 4 | Complete |
