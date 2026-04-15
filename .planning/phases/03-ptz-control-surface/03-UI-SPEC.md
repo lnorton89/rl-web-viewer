@@ -1,10 +1,11 @@
 ---
 phase: 3
 slug: ptz-control-surface
-status: draft
+status: approved
 shadcn_initialized: false
 preset: none
 created: 2026-04-14
+reviewed_at: 2026-04-14T20:06:42.3494178-07:00
 ---
 
 # Phase 3 - UI Design Contract

@@ -1,30 +1,23 @@
-# Phase 03: PTZ Control Surface - Research
+# Phase 3: PTZ Control Surface - Research
 
 **Researched:** 2026-04-14
-**Domain:** Browser PTZ and preset control for the local Reolink dashboard
+**Domain:** Reolink PTZ CGI/API + Fastify/React control surface
 **Confidence:** MEDIUM
 
 <user_constraints>
 ## User Constraints (from CONTEXT.md)
 
 ### Locked Decisions
-### Motion Interaction
 - **D-01:** Pan and tilt should use press-and-hold controls rather than click-per-step as the primary interaction.
 - **D-02:** Zoom should use explicit click actions for zoom in and zoom out rather than continuous hold behavior.
-
-### PTZ Layout
 - **D-03:** PTZ controls should live in a dedicated panel attached to the viewer layout instead of floating over the video by default.
 - **D-04:** The panel can sit beside the viewer on larger screens or below it on smaller screens as long as it remains clearly part of the viewer surface.
-
-### Stop And Safety Behavior
 - **D-05:** PTZ movement should stop immediately when the user releases the pan or tilt control.
 - **D-06:** The UI should also expose a clearly visible Stop control as a recovery path for pointer-loss, focus-loss, or unexpected motion cases.
-
-### Preset Presentation
 - **D-07:** Presets should render as a simple labeled list or grid rather than a hidden disclosure-first pattern.
 - **D-08:** Preset controls should only appear when the connected camera capability snapshot says preset support is available.
 
-### the agent's Discretion
+### Claude's Discretion
 - Exact PTZ button shapes, iconography, and visual styling
 - Whether the dedicated PTZ panel is side-by-side or stacked for a given viewport width
 - Whether keyboard support fits cleanly in this phase or should stay deferred
@@ -40,363 +33,366 @@
 
 | ID | Description | Research Support |
 |----|-------------|------------------|
-| PTZ-01 | User can pan, tilt, and zoom the camera from the web dashboard. | Add a PTZ adapter/service around `PtzCtrl` with browser-safe Fastify routes and UI controls that map hold events to motion ops and click events to zoom ops. |
-| PTZ-02 | User can stop PTZ movement promptly from the dashboard after starting motion. | Treat stop as a first-class backend command, fire it on pointer/key release and cancel/blur paths, and keep a visible Stop control in the UI. |
-| PTZ-03 | User can view and trigger saved PTZ presets when supported. | Read presets with `GetPtzPreset`, normalize enabled slots only, and call them through an adapter route rather than exposing raw command payloads to the browser. |
+| PTZ-01 | User can pan, tilt, and zoom the camera from the web dashboard. | Use backend-owned `PtzCtrl` routes for motion and bounded zoom pulses; reuse `ReolinkSession`; keep browser logic pointer-driven only. |
+| PTZ-02 | User can stop PTZ movement promptly from the dashboard after starting motion. | Use press-hold `PtzCtrl` start + explicit `Stop`, pointer capture, `pointercancel`, `lostpointercapture`, `blur`, `visibilitychange`, and a server-side watchdog stop timer. |
+| PTZ-03 | User can view and trigger saved PTZ presets when the connected camera/firmware supports them. | Load enabled presets from `GetPtzPreset`, gate via `supportsPtzPreset`, and recall via `PtzCtrl` `ToPos` using the preset id. |
 </phase_requirements>
 
 ## Summary
 
-Phase 3 should be planned as a thin extension of the existing local control plane, not as a browser-direct camera integration. The RLC-423S firmware already accepts `PtzCtrl` commands for movement, stop, zoom, and preset recall through the same tokenized CGI path Phase 1 established, so the lowest-risk approach is to add a PTZ adapter/service layer in Node, expose browser-safe Fastify routes, and wire a dedicated PTZ panel into the React dashboard next to the existing live viewer.
+Phase 3 should extend the existing control plane rather than introduce any direct browser-to-camera logic. The repo already has the correct seams: Fastify route plugins, a reusable authenticated `ReolinkSession`, persisted capability snapshots, and a viewer-first React shell. The planner should add a PTZ-specific service and route plugin that owns all camera PTZ traffic, hides credentials and token handling from the browser, and returns only browser-safe capability and preset data.
 
-The real firmware behavior we verified on `http://192.168.1.140` is strong enough to plan confidently. `PtzCtrl` with `Left`, `Stop`, `ZoomInc`, and `ToPos` all returned success (`code: 0`, `rspCode: 200`). `GetPtzPreset` returned a 64-slot preset array with `{ channel, enable, id, name }` entries. `SetPtzPreset` is configuration-sensitive: it can change whether a preset slot is enabled, so Phase 3 should avoid exposing preset editing in the UI and keep the scope to reading and recalling presets only.
+For the RLC-423S class API, pan/tilt/zoom all route through `PtzCtrl`, presets are discovered through `GetPtzPreset`, and preset recall uses `PtzCtrl` with `ToPos`. The critical behavior is that motion is continuous until `Stop` is sent. That means Phase 3 is not just a button-layout task: the browser must treat press-and-hold as a start/stop lifecycle, and the backend should add a short watchdog stop timer so pointer loss, tab switching, or dropped requests do not leave the camera moving.
 
-The critical design risk is not “can the camera move?” but “can the browser reliably stop it?” Press-and-hold PTZ only feels safe if stop dispatch survives pointer release, pointer cancel, lost capture, window blur, and component unmount. Plan for stop behavior as a small state machine in both the browser and server: motion start, stop, in-flight dedupe, and explicit failure surfacing. This phase also needs fixture-backed tests for payload construction and route behavior, plus a focused human verification pass with the real camera because stop timing and motion confidence are hard to prove in unit tests alone.
+There are firmware-level inconsistencies the plan must absorb instead of ignoring. The API guide and community SDKs disagree on zoom direction naming (`ZoomInc` vs `ZoomDec`), and one SDK disagrees on whether preset recall uses `id` or `index`. The planner should treat those as adapter-verified details for this exact firmware, not as universal truths, and should budget one hardware verification step plus fixture capture early in the phase.
 
-**Primary recommendation:** Add a dedicated PTZ adapter/service + Fastify route layer around `PtzCtrl` and `GetPtzPreset`, drive the UI from capability-gated browser-safe DTOs, use press-and-hold pan/tilt with guaranteed stop-on-release and explicit Stop, and keep presets read-and-recall only in v1.
+**Primary recommendation:** Add a `reolink-ptz` backend service plus `ptzRoutes` Fastify plugin, implement pan/tilt as press-hold `PtzCtrl` start plus guaranteed `Stop`, implement zoom as short server-side pulses, and render presets only from `GetPtzPreset` entries whose `enable` flag is truthy.
 
-## Project Constraints (from AGENTS.md)
+## Project Constraints (from CLAUDE.md)
 
-- Node.js is the primary application environment.
-- v1 is LAN-only and single-user.
-- The first supported device is the RLC-423S on firmware `v2.0.0.1055_17110905_v1.0.0.30`.
-- No Flash or browser-plugin dependencies are acceptable.
-- Camera-specific logic should live behind capability-aware adapters.
-- Configuration writes should use read/validate/write/verify flows.
-- The architecture should keep a browser dashboard, local app server, camera adapter/session layer, separate media layer, and debug/fixture capture as distinct responsibilities.
-- Planning artifacts should stay in the GSD workflow; recommendations here should not assume bypassing it.
+- Use Node.js as the primary application environment.
+- Keep v1 LAN-only and single-user.
+- Target the RLC-423S first, specifically firmware `v2.0.0.1055_17110905_v1.0.0.30`.
+- Do not depend on Flash or browser plugins.
+- Keep camera-specific behavior behind capability-aware adapters.
+- Keep write/control flows conservative and explicit rather than optimistic.
+- Stay inside the GSD planning workflow for implementation work.
 
 ## Standard Stack
 
 ### Core
 | Library | Version | Purpose | Why Standard |
 |---------|---------|---------|--------------|
-| Fastify | `5.8.5` | Browser-safe PTZ API routes | Already in repo and already owns the live-view bootstrap boundary. |
-| React | `19.2.5` | PTZ panel and preset UI | Existing dashboard is already React-based and should own PTZ interaction state too. |
-| Vitest | `4.1.4` | PTZ service, route, and UI behavior tests | Existing test runner and phase-verification tooling already use it. |
-| Zod | `4.3.6` | PTZ request/response normalization | Existing repo pattern for parsing camera responses and browser-safe DTOs. |
+| `fastify` | `5.8.5` | Local PTZ API routes and UI hosting | Already established in the repo; keeps credentials and retries server-side. |
+| `react` | `19.2.5` | PTZ panel, press-hold controls, preset UI | Already drives the viewer shell and fits pointer-event control surfaces cleanly. |
+| `zod` | `4.3.6` | Route body validation and camera response parsing | The repo already uses runtime validation for firmware-varying responses. |
 
 ### Supporting
 | Library | Version | Purpose | When to Use |
 |---------|---------|---------|-------------|
-| `@testing-library/react` | `16.3.2` | PTZ press/release and preset UI tests | Use for pointer lifecycle and visible control-state assertions. |
-| `@testing-library/user-event` | `14.6.1` | Realistic button and pointer interactions | Use for hold-to-move, click-to-zoom, and preset trigger coverage. |
-| `pino` | `10.3.1` | PTZ route/service logging | Reuse existing structured logging for PTZ failures and retries. |
+| `vitest` | `4.1.4` | Node and jsdom validation for PTZ service/routes/UI | Use for adapter, route, and browser lifecycle tests. |
+| `src/camera/reolink-session.ts` | repo-local | Login, token reuse, auth retry | Use for every PTZ command instead of inventing another camera client. |
+| `src/camera/capability-snapshot.ts` | repo-local | PTZ and preset gating | Use before exposing any PTZ or preset UI/API. |
+| `src/diagnostics/debug-capture.ts` | repo-local | Sanitized artifact capture for firmware surprises | Use when preset payloads or PTZ responses do not match expected shapes. |
 
 ### Alternatives Considered
 | Instead of | Could Use | Tradeoff |
 |------------|-----------|----------|
-| App-owned PTZ routes | Browser sends camera CGI directly | Faster demo path, but leaks credentials/tokens and bypasses capability gating, retries, and diagnostics. |
-| Press-and-hold pan/tilt | Timed movement bursts only | Simpler stop semantics, but contradicts the locked UX decision and feels less direct. |
-| Read-only presets + recall | Full preset create/edit/delete in Phase 3 | Technically possible, but it crosses into configuration-writing behavior and raises the risk of unintended camera-state changes. |
+| Backend-owned PTZ routes | Browser calls camera CGI directly | Reject: exposes credentials/tokens, duplicates auth logic, and breaks the repo's control-plane boundary. |
+| `PtzCtrl` zoom pulse | `StartZoomFocus` absolute zoom position flow | `StartZoomFocus` is more stateful and needs absolute zoom-position management; too much surface area for this phase. |
+| Capability snapshot gating | Raw ability parsing in React | Reject: duplicates backend normalization and risks UI drift across models/firmware. |
+
+**Installation:**
+```bash
+# No new package install is recommended for Phase 3.
+# Reuse the repo-pinned stack already present in package.json.
+```
+
+**Version verification:** Verified from npm on 2026-04-14:
+- `fastify` `5.8.5` - published `2026-04-14T12:07:12.232Z`
+- `react` `19.2.5` - published `2026-04-08T18:39:24.455Z`
+- `vitest` `4.1.4` - published `2026-04-09T07:36:52.741Z`
+- `zod` `4.3.6` - published `2026-01-22T19:14:35.382Z`
 
 ## Architecture Patterns
 
 ### Recommended Project Structure
 ```text
 src/
-  camera/
-    reolink-ptz.ts         # PTZ command and preset adapter around ReolinkSession
-  server/
-    routes/
-      ptz.ts               # Browser-safe PTZ and preset endpoints
-  types/
-    ptz.ts                 # Shared browser-safe PTZ DTOs and command enums
+├── camera/
+│   └── reolink-ptz.ts         # PTZ command builders, response parsing, preset loading
+├── server/
+│   └── routes/
+│       └── ptz.ts             # Fastify PTZ bootstrap and command routes
+├── types/
+│   └── ptz.ts                 # Browser-safe PTZ contracts
+└── diagnostics/
+    └── debug-capture.ts       # Reused for unexpected PTZ responses
+
 web/src/
-  components/
-    PtzPanel.tsx
-    PtzPad.tsx
-    PresetList.tsx
-  hooks/
-    use-ptz-controls.ts    # Hold/release/stop lifecycle
-  lib/
-    ptz-api.ts             # Fetch wrapper for PTZ routes
+├── components/
+│   ├── PtzPanel.tsx           # Dedicated PTZ panel attached to the viewer layout
+│   └── PtzPresetGrid.tsx      # Simple visible preset list/grid
+├── hooks/
+│   └── use-ptz-controls.ts    # Pointer lifecycle and stop guarantees
+└── lib/
+    └── ptz-api.ts             # Browser API client
+
 tests/
-  camera/
-    reolink-ptz.test.ts
-  server/
-    ptz-routes.test.ts
-  web/
-    ptz-controls.test.tsx
+├── camera/
+│   └── reolink-ptz.test.ts
+├── server/
+│   └── ptz-routes.test.ts
+├── web/
+│   └── ptz-controls.test.tsx
+└── fixtures/
+    └── reolink/
+        ├── get-ptz-preset.json
+        ├── ptz-ctrl.json
+        └── ptz-check-state.json
 ```
 
-### Pattern 1: Adapter-Normalized PTZ Operations
-**What:** Wrap raw Reolink commands in app-level operations such as `move(direction)`, `stop()`, `zoom(direction)`, and `callPreset(id)`.
-**When to use:** Always. The browser should not know CGI command names or payload shape.
+### Pattern 1: Backend-Owned PTZ Service
+**What:** Keep PTZ request building, token reuse, capability checks, and response parsing in a dedicated backend service next to `reolink-session.ts`.
+**When to use:** For every pan, tilt, zoom, stop, and preset operation.
 **Example:**
-```ts
-type PtzMoveOp =
-  | "Left"
-  | "Right"
-  | "Up"
-  | "Down"
-  | "LeftUp"
-  | "LeftDown"
-  | "RightUp"
-  | "RightDown";
-
-type PtzZoomOp = "ZoomInc" | "ZoomDec";
-
-await session.requestJson([
-  { cmd: "PtzCtrl", action: 0, param: { channel: 0, op: "Left", speed: 32 } },
-]);
+```typescript
+// Source: Reolink Camera HTTP API User Guide v7 + reolinkapipy PTZ mixin
+const body = [
+  {
+    cmd: "PtzCtrl",
+    action: 0,
+    param: { channel: 0, op: "Left", speed: 25 },
+  },
+];
 ```
-Source: verified against the local RLC-423S and corroborated by the Reolink wrapper/OpenAPI docs.
 
-### Pattern 2: Stop-As-A-First-Class Route
-**What:** Expose an explicit stop endpoint, not just implicit UI cleanup.
-**When to use:** On pointer release, pointer cancel, window blur, route teardown, and manual Stop.
+### Pattern 2: Press-and-Hold With Guaranteed Stop
+**What:** On pointer down, send one motion-start command and capture the pointer. On `pointerup`, `pointercancel`, `lostpointercapture`, window `blur`, or document `visibilitychange` to `hidden`, send `Stop` once if motion is active.
+**When to use:** Pan/tilt controls and any future hold-style PTZ interaction.
 **Example:**
-```ts
-await session.requestJson([
-  { cmd: "PtzCtrl", action: 0, param: { channel: 0, op: "Stop" } },
-]);
-```
-Source: verified against the local RLC-423S.
+```typescript
+// Source: MDN setPointerCapture / pointercancel / lostpointercapture / visibilitychange
+function beginMotion(event: React.PointerEvent<HTMLButtonElement>, direction: PtzDirection) {
+  event.currentTarget.setPointerCapture(event.pointerId);
+  void api.startMotion(direction);
+  motionRef.current = direction;
+}
 
-### Pattern 3: Read-Only Preset Normalization
-**What:** Fetch raw preset slots, then publish a browser DTO containing only enabled presets and stable labels.
-**When to use:** Always. Raw camera slots are sparse and firmware-shaped.
-**Example:**
-```ts
-type PtzPresetDto = {
-  id: number;
-  name: string;
-};
-
-function normalizePresets(raw: { id: number; name: string; enable: number }[]) {
-  return raw
-    .filter((preset) => preset.enable === 1)
-    .map((preset) => ({ id: preset.id, name: preset.name || `Preset ${preset.id}` }));
+function ensureStop() {
+  if (motionRef.current === null) return;
+  motionRef.current = null;
+  void api.stopMotion();
 }
 ```
-Source: `GetPtzPreset` response shape verified against the local camera.
 
-### Pattern 4: UI Hold Lifecycle With Server Failsafe
-**What:** Let the browser initiate motion on press and always send stop on release/cancel, while the server remains the only PTZ authority.
-**When to use:** For every continuous pan/tilt interaction.
-**Recommended lifecycle:** `pointerdown -> move` then `pointerup/pointercancel/lostpointercapture/blur -> stop`
+### Pattern 3: Capability-Gated PTZ Bootstrap
+**What:** Load capability flags and the current enabled preset list from the backend before rendering PTZ UI.
+**When to use:** Initial PTZ panel mount and after any reconnect that could change the capability snapshot.
+**Example:**
+```typescript
+// Source: repo capability snapshot pattern + Reolink GetPtzPreset response shape
+type PtzBootstrap = {
+  supportsPtzControl: boolean;
+  supportsPtzPreset: boolean;
+  presets: Array<{ id: number; name: string; enabled: boolean }>;
+};
+```
 
 ### Anti-Patterns to Avoid
-- **Preset editing in Phase 3:** `SetPtzPreset` mutates camera state. We verified this accidentally by enabling a previously disabled slot, then restoring it. Keep Phase 3 to recall-only.
-- **Single “fire and forget” movement requests:** Without guaranteed release-path stop handling, the camera can keep moving longer than intended.
-- **Raw CGI payloads in the browser:** Breaks the existing credentials and capability boundary established in Phases 1 and 2.
-- **UI-only gating:** PTZ support must be checked in the backend too, not just hidden in React.
-- **Treating stop failures like silent no-ops:** If stop fails, that should surface clearly because it is safety-relevant behavior.
+- **Direct browser-to-camera CGI calls:** This leaks credentials and duplicates token handling.
+- **Repeated move-command spam while the button is held:** `PtzCtrl` movement is continuous; send start once and stop once.
+- **Hard-coding preset slots in the UI:** `GetPtzPreset` returns disabled slots and optional extra fields; render enabled results only.
+- **Hard-coding zoom labels before device verification:** The documentation and SDKs disagree on `ZoomInc` vs `ZoomDec`.
 
 ## Don't Hand-Roll
 
 | Problem | Don't Build | Use Instead | Why |
 |---------|-------------|-------------|-----|
-| Direct browser-to-camera PTZ | Manual fetches from React to `/cgi-bin/api.cgi` | Fastify PTZ routes backed by `ReolinkSession` | Preserves credential safety, retries, logging, and capability gating. |
-| Ad-hoc event listeners scattered across components | Separate one-off handlers per button | A shared `usePtzControls()` hook | Centralizes release/cancel/blur stop logic and reduces regressions. |
-| Raw preset arrays in the UI | Direct rendering of 64 firmware slots | Normalized enabled preset DTOs | Keeps the UI simple and avoids leaking firmware quirks. |
-| “Looks good in browser” verification only | Manual-only PTZ validation | Fixture/unit/jsdom coverage plus a small human UAT pass | Stop timing and capability gating need both automated and live-camera checks. |
+| Camera auth/retry | A second PTZ-specific session client | `ReolinkSession` | It already handles login, token caching, and auth retry. |
+| Feature gating | Raw ability parsing in React | `CapabilitySnapshot` flags | The repo already normalizes `supportsPtzControl` and `supportsPtzPreset`. |
+| Stop safety | Mouse-only event handling | Pointer Events + capture + page lifecycle fallbacks | Touch, pen, viewport gestures, and tab changes all need explicit stop handling. |
+| Zoom click semantics | Absolute zoom-position state machine | Short `PtzCtrl` zoom pulses with auto-stop | Bounded pulses match the UX decision without introducing position bookkeeping. |
+| Firmware diagnostics | Ad hoc console logging | `writeDebugArtifact()` | Unexpected PTZ payloads need sanitized reusable artifacts. |
+
+**Key insight:** Phase 3 should reuse the repo's existing control-plane primitives and add the minimum new PTZ adapter/service logic. The risk is firmware variance, not missing frontend widgets.
 
 ## Common Pitfalls
 
-### Pitfall 1: Missing stop on non-happy-path pointer exits
-**What goes wrong:** The user drags out of the control, changes tabs, or loses pointer capture and the camera keeps moving.
-**Why it happens:** Only `pointerup` is handled.
-**How to avoid:** Handle `pointerup`, `pointercancel`, `lostpointercapture`, `mouseleave` where appropriate, window blur, and component teardown.
-**Warning signs:** PTZ works in simple clicks but occasionally “sticks” during quick drags or tab switches.
+### Pitfall 1: Missing Stop Leaves The Camera Moving
+**What goes wrong:** A motion command succeeds, but release/focus-loss does not send `Stop`, so the camera keeps moving.
+**Why it happens:** `PtzCtrl` move commands are continuous; stop is a separate command.
+**How to avoid:** Use pointer capture, `pointercancel`, `lostpointercapture`, window `blur`, document `visibilitychange`, and a backend watchdog stop timer.
+**Warning signs:** Motion continues after pointer release, tab switch, or failed network round-trip.
 
-### Pitfall 2: Treating presets as harmless read-only data
-**What goes wrong:** A recall or test command unexpectedly mutates preset state.
-**Why it happens:** `SetPtzPreset` is both configuration and action-shaped depending on payload.
-**How to avoid:** Keep Phase 3 on `GetPtzPreset` + recall-only flow, and isolate any future preset editing behind a separate settings/config phase.
-**Warning signs:** Preset `enable` or names change during tests.
+### Pitfall 2: Zoom Direction Names Are Not Trustworthy Across Sources
+**What goes wrong:** The UI labels "Zoom In" and "Zoom Out" opposite to the camera behavior.
+**Why it happens:** The API guide and community SDKs disagree on whether `ZoomInc` means in or out.
+**How to avoid:** Put the mapping behind the PTZ adapter and verify on the actual RLC-423S firmware before freezing labels.
+**Warning signs:** First hardware test shows the lens moving opposite to the button label even though the API call returned success.
 
-### Pitfall 3: UI gating without backend validation
-**What goes wrong:** Hidden controls stay safe in the browser, but crafted requests can still hit unsupported PTZ routes.
-**Why it happens:** Capability checks are only performed in React.
-**How to avoid:** Check `supportsPtzControl` and `supportsPtzPreset` in the service/route layer before sending camera commands.
-**Warning signs:** Backend executes PTZ routes even when capability snapshots say the feature is unsupported.
+### Pitfall 3: Preset Payload Shapes Are Inconsistent
+**What goes wrong:** Presets parse incorrectly or recall fails even though support is present.
+**Why it happens:** Firmware examples include disabled slots, optional `imgName`, and conflicting slot indexing examples; one SDK uses `index` where the API guide and another SDK use `id`.
+**How to avoid:** Parse leniently, keep only enabled presets for UI, prefer `id` for recall, and capture debug artifacts on rejection.
+**Warning signs:** Empty preset UI despite `supportsPtzPreset`, or `ToPos` returning an error for a visible preset.
 
-### Pitfall 4: Coupling PTZ availability to live-view transport state
-**What goes wrong:** PTZ becomes unavailable just because WebRTC/HLS fell back or reconnects.
-**Why it happens:** Viewer state and control state are modeled as one thing.
-**How to avoid:** Keep PTZ capability/command state separate from media transport state, while still colocating the UI.
-**Warning signs:** PTZ buttons disappear or disable during temporary video reconnects.
-
-### Pitfall 5: No fixture coverage for firmware-shaped preset responses
-**What goes wrong:** The first live preset list works, but sparse or disabled slots break rendering later.
-**Why it happens:** Tests only cover ideal arrays, not camera-shaped arrays.
-**How to avoid:** Save sanitized PTZ fixture payloads and test normalization against disabled, unnamed, and sparse entries.
-**Warning signs:** Preset UI shows dozens of blank rows or crashes on missing names.
+### Pitfall 4: Preset Accuracy May Depend On Calibration
+**What goes wrong:** A preset recalls to the wrong physical position.
+**Why it happens:** Later API docs and community docs expose `GetPtzCheckState` and `PtzCheck`, and community guidance reports drift when calibration is incomplete on some PTZ models.
+**How to avoid:** Keep calibration out of scope for this phase, but document the risk, capture artifacts, and add a manual verification step for preset recall accuracy.
+**Warning signs:** Preset recall succeeds at the API level but lands visibly off target.
 
 ## Code Examples
 
-Verified patterns from the live camera and current community docs:
+Verified patterns from current sources:
 
 ### Motion Start
-```json
-[{
-  "cmd": "PtzCtrl",
-  "action": 0,
-  "param": {
-    "channel": 0,
-    "op": "Left",
-    "speed": 32
-  }
-}]
+```typescript
+// Source: Reolink Camera HTTP API User Guide v7 (PtzCtrl)
+const moveLeft = [
+  {
+    cmd: "PtzCtrl",
+    action: 0,
+    param: { channel: 0, op: "Left", speed: 25 },
+  },
+];
 ```
-Observed result: `code: 0`, `value.rspCode: 200` on the local RLC-423S.
 
-### Guaranteed Stop
-```json
-[{
-  "cmd": "PtzCtrl",
-  "action": 0,
-  "param": {
-    "channel": 0,
-    "op": "Stop"
-  }
-}]
+### Motion Stop
+```typescript
+// Source: Reolink Camera HTTP API User Guide v7 + reolinkapipy PTZ mixin
+const stop = [
+  {
+    cmd: "PtzCtrl",
+    action: 0,
+    param: { channel: 0, op: "Stop" },
+  },
+];
 ```
-Observed result: `code: 0`, `value.rspCode: 200` on the local RLC-423S.
-
-### Zoom
-```json
-[{
-  "cmd": "PtzCtrl",
-  "action": 0,
-  "param": {
-    "channel": 0,
-    "op": "ZoomInc",
-    "speed": 32
-  }
-}]
-```
-Observed result: `code: 0`, `value.rspCode: 200` on the local RLC-423S.
 
 ### Preset Discovery
-```json
-[{
-  "cmd": "GetPtzPreset",
-  "action": 0,
-  "param": {
-    "channel": 0
-  }
-}]
+```typescript
+// Source: Reolink Camera HTTP API User Guide v7 (GetPtzPreset)
+const getPresets = [
+  {
+    cmd: "GetPtzPreset",
+    action: 1,
+    param: { channel: 0 },
+  },
+];
 ```
-Observed result: 64 preset slots with `{ channel, enable, id, name }`.
 
-### Preset Recall Candidate
-```json
-[{
-  "cmd": "PtzCtrl",
-  "action": 0,
-  "param": {
-    "channel": 0,
-    "op": "ToPos",
-    "id": 1
-  }
-}]
+### Preset Recall
+```typescript
+// Source: Reolink Camera HTTP API User Guide v7 + reolinkapipy PTZ mixin
+const recallPreset = (id: number) => [
+  {
+    cmd: "PtzCtrl",
+    action: 0,
+    param: { channel: 0, op: "ToPos", id, speed: 60 },
+  },
+];
 ```
-Observed result: `code: 0`, `value.rspCode: 200` on the local RLC-423S.
+
+### Browser Stop Safety
+```typescript
+// Source: MDN pointer and page lifecycle docs
+button.onpointerdown = (event) => {
+  button.setPointerCapture(event.pointerId);
+  startMotion();
+};
+
+button.onpointerup = ensureStop;
+button.onpointercancel = ensureStop;
+button.onlostpointercapture = ensureStop;
+window.addEventListener("blur", ensureStop);
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "hidden") ensureStop();
+});
+```
 
 ## State of the Art
 
 | Old Approach | Current Approach | When Changed | Impact |
 |--------------|------------------|--------------|--------|
-| Flash-era PTZ inside vendor web UI | Browser UI talking to a local app-owned PTZ API | 2020s | Keeps modern browser compatibility and fits the app-owned control plane already used for live view. |
-| Raw vendor command strings mixed into UI code | Capability-gated adapter/service APIs | 2020s | Easier to test, safer for future model expansion, and consistent with prior phases. |
-| Manual-only PTZ verification | Unit/jsdom route and interaction tests plus short live-camera UAT | Current repo workflow | Better confidence in stop semantics without pretending everything can be simulated perfectly. |
+| Flash/plugin PTZ in the vendor browser UI | Local Node/Fastify control plane issuing JSON CGI commands | Modern browser baseline + existing repo architecture | PTZ stays browser-safe and LAN-local without exposing camera auth to the SPA. |
+| Mouse-only press/release handling | Pointer Events with capture and page lifecycle stop fallbacks | Pointer capture baseline July 2020; `visibilitychange` baseline April 2021 | Better stop safety on touch, pen, focus-loss, and tab switches. |
+| Static preset assumptions | Runtime `GetPtzPreset` query filtered by `enable` | API guide v7 + community SDK examples | UI reflects the actual saved presets instead of showing dead controls. |
+
+**Deprecated/outdated:**
+- Direct browser login to the camera CGI from app JavaScript.
+- Any Flash- or plugin-era PTZ UI assumptions.
+- Building Phase 3 around `StartZoomFocus` absolute position management when the UX decision is click-based zoom, not full zoom-position control.
 
 ## Open Questions
 
-1. **What speed should v1 default to for movement and zoom?**
-   - What we know: `speed: 32` is accepted by the local camera and common wrapper docs describe a 1-64 range.
-   - What's unclear: whether `32` feels best for this exact camera in browser-driven hold control.
-   - Recommendation: plan for a fixed default speed in Phase 3, validate it during human UAT, and defer user-adjustable speed to later if needed.
+1. **Which operation is visually "Zoom In" on firmware `v2.0.0.1055_17110905_v1.0.0.30`?**
+   - What we know: the API guide and community SDKs disagree on `ZoomInc` vs `ZoomDec`.
+   - What's unclear: which op maps to the user-facing label on this exact camera.
+   - Recommendation: verify on hardware in the first PTZ adapter task and keep the mapping adapter-owned.
 
-2. **Should diagonal movement ship in Phase 3 UI?**
-   - What we know: the command family supports diagonal ops (`LeftUp`, `LeftDown`, `RightUp`, `RightDown`) in community docs.
-   - What's unclear: whether the first PTZ surface should include diagonals or keep the pad to cardinal directions plus zoom.
-   - Recommendation: leave this to planner discretion unless the UI spec later makes it explicit.
-
-3. **How should the UI represent “no enabled presets”?**
-   - What we know: the current camera returned 64 preset slots and all were initially disabled.
-   - What's unclear: whether the best v1 behavior is a hidden section, an empty-state note, or a disabled container.
-   - Recommendation: plan for a compact empty state only when preset support exists but no enabled presets are available.
+2. **Does this firmware accept only `id` for `ToPos`, or does it also accept `index`?**
+   - What we know: the API guide and Python SDK use `id`; the Go SDK uses `index`.
+   - What's unclear: whether `index` is an alias or a library bug.
+   - Recommendation: implement `id`, capture debug on failure, and add an adapter fallback only if the camera rejects it.
 
 ## Environment Availability
 
 | Dependency | Required By | Available | Version | Fallback |
 |------------|------------|-----------|---------|----------|
-| Node.js | Fastify server, React build, existing app runtime | Yes | `v22.18.0` | n/a |
-| npm | Dependency installation and scripts | Yes | `10.9.3` | n/a |
-| Vitest | PTZ automated coverage | Yes | `4.1.4` (repo) | n/a |
-| Live camera on LAN | PTZ UAT and fixture capture | Yes | RLC-423S `v2.0.0.1055_17110905_v1.0.0.30` | Use sanitized fixtures for automation if camera unavailable |
+| Node.js | Fastify routes, PTZ service, tests | Yes | `v22.18.0` | - |
+| npm | Existing scripts and targeted Vitest runs | Yes | `10.9.3` | - |
+| Local camera config | Manual PTZ verification | Yes | `.local/camera.config.json` present | Fixture and jsdom tests if hardware is unavailable |
+| Capability snapshot | Capability gating and local PTZ planning | Yes | `RLC-423S / v2.0.0.1055_17110905_v1.0.0.30` | Re-run probe if snapshot is stale |
 
 **Missing dependencies with no fallback:**
-- None.
+- None found during research.
 
 **Missing dependencies with fallback:**
-- None. Phase 3 can build on the existing server, browser, and test stack.
+- Live camera reachability was not probed during research. PTZ stop semantics and zoom-direction mapping still need one hardware validation pass; fixture tests cover everything else.
 
 ## Validation Architecture
 
 ### Test Framework
 | Property | Value |
 |----------|-------|
-| Framework | `Vitest 4.1.4` |
+| Framework | `vitest 4.1.4` |
 | Config file | `vitest.config.ts` |
-| Quick run command | `npx vitest run tests/camera/reolink-ptz.test.ts tests/server/ptz-routes.test.ts -x` |
+| Quick run command | `npx vitest run tests/camera/reolink-ptz.test.ts tests/server/ptz-routes.test.ts tests/web/ptz-controls.test.tsx` |
 | Full suite command | `npm test` |
 
 ### Phase Requirements -> Test Map
 | Req ID | Behavior | Test Type | Automated Command | File Exists? |
 |--------|----------|-----------|-------------------|-------------|
-| PTZ-01 | Browser can start pan/tilt motion and trigger zoom through app-owned routes | unit + route + jsdom | `npx vitest run tests/camera/reolink-ptz.test.ts tests/server/ptz-routes.test.ts tests/web/ptz-controls.test.tsx -x` | No - Wave 0 |
-| PTZ-02 | Stop fires on release and manual Stop reaches the backend command path | route + jsdom | `npx vitest run tests/server/ptz-routes.test.ts tests/web/ptz-controls.test.tsx -x` | No - Wave 0 |
-| PTZ-03 | Enabled presets are normalized, listed, and callable | unit + route + jsdom | `npx vitest run tests/camera/reolink-ptz.test.ts tests/server/ptz-routes.test.ts tests/web/ptz-controls.test.tsx -x` | No - Wave 0 |
+| PTZ-01 | Pan, tilt, and zoom commands map to browser-safe routes and adapter calls | unit + route + jsdom | `npx vitest run tests/camera/reolink-ptz.test.ts tests/server/ptz-routes.test.ts tests/web/ptz-controls.test.tsx` | No - Wave 0 |
+| PTZ-02 | Motion stops on release, cancel, blur, visibility loss, and explicit Stop CTA | route + jsdom | `npx vitest run tests/server/ptz-routes.test.ts tests/web/ptz-controls.test.tsx` | No - Wave 0 |
+| PTZ-03 | Enabled presets render and recall correctly when supported | unit + route + jsdom | `npx vitest run tests/camera/reolink-ptz.test.ts tests/server/ptz-routes.test.ts tests/web/ptz-controls.test.tsx` | No - Wave 0 |
 
 ### Sampling Rate
-- **Per task commit:** targeted `vitest` command for the files touched in that task
+- **Per task commit:** `npx vitest run tests/camera/reolink-ptz.test.ts tests/server/ptz-routes.test.ts tests/web/ptz-controls.test.tsx`
 - **Per wave merge:** `npm test`
-- **Phase gate:** full suite green plus a short live-camera UAT pass covering move, stop, and preset behavior
+- **Phase gate:** Full suite green plus one manual hardware check for press-hold stop and zoom direction before `/gsd:verify-work`
 
 ### Wave 0 Gaps
-- [ ] `tests/camera/reolink-ptz.test.ts` - covers PTZ payload construction, capability gating, and preset normalization
-- [ ] `tests/server/ptz-routes.test.ts` - covers browser-safe PTZ endpoints, stop route behavior, and route-level validation/errors
-- [ ] `tests/web/ptz-controls.test.tsx` - covers hold/release stop behavior, zoom clicks, and preset rendering/triggering
-- [ ] Sanitized PTZ fixture payloads under `tests/fixtures/reolink/` for `GetPtzPreset` and representative PTZ command responses
+- [ ] `tests/fixtures/reolink/get-ptz-preset.json` - real or sanitized preset payload for the target firmware
+- [ ] `tests/fixtures/reolink/ptz-ctrl.json` - success response fixture for motion/stop/zoom commands
+- [ ] `tests/fixtures/reolink/ptz-check-state.json` - optional fixture for calibration/drift diagnostics
+- [ ] `tests/camera/reolink-ptz.test.ts` - adapter request/response parsing, preset filtering, and `ToPos` payload tests
+- [ ] `tests/server/ptz-routes.test.ts` - route schemas, capability gating, browser-safe payloads, and watchdog stop behavior
+- [ ] `tests/web/ptz-controls.test.tsx` - pointer hold/release/cancel/blur visibility tests and preset rendering tests
 
 ## Sources
 
 ### Primary (HIGH confidence)
-- Local live-camera probing against `http://192.168.1.140` using the existing tokenized CGI flow in this repo
-  Commands verified: `PtzCtrl` (`Left`, `Stop`, `ZoomInc`, `ToPos`), `GetPtzPreset`, `SetPtzPreset`
-- Existing repo code and artifacts
-  `.planning/phases/03-ptz-control-surface/03-CONTEXT.md`
-  `.planning/REQUIREMENTS.md`
-  `src/camera/reolink-session.ts`
-  `src/camera/capability-snapshot.ts`
-  `src/server/create-server.ts`
-  `src/server/routes/live-view.ts`
-  `web/src/App.tsx`
-  `web/src/hooks/use-live-view.ts`
+- [Reolink Camera HTTP API User Guide v7 (2022 PDF mirror)](https://forum.iobroker.net/assets/uploads/files/1694077622272-reolink-kamera-api-2022.pdf) - `GetPtzPreset`, `PtzCtrl`, `GetZoomFocus`, `StartZoomFocus`, `GetPtzCheckState`, `PtzCheck`
+- [setPointerCapture() - MDN](https://developer.mozilla.org/en-US/docs/Web/API/Element/setPointerCapture) - pointer capture semantics and release behavior
+- [pointercancel - MDN](https://developer.mozilla.org/en-US/docs/Web/API/Element/pointercancel_event) - cancel conditions that require stop recovery
+- [lostpointercapture - MDN](https://developer.mozilla.org/en-US/docs/Web/API/Element/lostpointercapture_event) - release event for captured pointers
+- [visibilitychange - MDN](https://developer.mozilla.org/en-US/docs/Web/API/Document/visibilitychange_event) - hidden-page stop fallback
+- [blur - MDN](https://developer.mozilla.org/en-US/docs/Web/API/Window/blur_event) - focus-loss stop fallback
+- [create-server.ts](C:/Users/Lawrence/Documents/Dev/reolink/src/server/create-server.ts) - current Fastify plugin registration pattern
+- [live-view.ts](C:/Users/Lawrence/Documents/Dev/reolink/src/server/routes/live-view.ts) - browser-safe route contract pattern
+- [reolink-session.ts](C:/Users/Lawrence/Documents/Dev/reolink/src/camera/reolink-session.ts) - session reuse and auth retry
+- [capability-snapshot.ts](C:/Users/Lawrence/Documents/Dev/reolink/src/camera/capability-snapshot.ts) - PTZ capability flags
+- [App.tsx](C:/Users/Lawrence/Documents/Dev/reolink/web/src/App.tsx) and [styles.css](C:/Users/Lawrence/Documents/Dev/reolink/web/src/styles.css) - current viewer-shell integration point
+- [vitest.config.ts](C:/Users/Lawrence/Documents/Dev/reolink/vitest.config.ts) - current node/jsdom test split
 
 ### Secondary (MEDIUM confidence)
-- ReolinkCameraAPI/reolinkapigo README - confirms token-based camera API workflow and PTZ support goals
-  https://github.com/ReolinkCameraAPI/reolinkapigo
-- `mosleyit/reolink_api_wrapper` generated docs/OpenAPI - PTZ op constants and request schema details
-  https://pkg.go.dev/github.com/mosleyit/reolink_api_wrapper
-  https://raw.githubusercontent.com/mosleyit/reolink_api_wrapper/main/docs/reolink-camera-api-openapi.yaml
+- [reolinkapipy PTZ mixin](https://raw.githubusercontent.com/ReolinkCameraAPI/reolinkapipy/master/reolinkapi/mixins/ptz.py) - current community-maintained PTZ command naming and preset handling
+- [reolinkapipy GetPtzPresets example](https://raw.githubusercontent.com/ReolinkCameraAPI/reolinkapipy/master/examples/response/GetPtzPresets.json) - preset payload variance (`imgName`, slot indexing examples)
+- [reolinkapigo PTZ mixin](https://raw.githubusercontent.com/ReolinkCameraAPI/reolinkapigo/main/internal/pkg/api/ptz_mixin.go) - cross-check for motion/preset command usage
+- [reolinkapigo zoom mixin](https://raw.githubusercontent.com/ReolinkCameraAPI/reolinkapigo/main/internal/pkg/api/zoom_mixin.go) - cross-check that zoom uses `PtzCtrl` and separate stop behavior
 
 ### Tertiary (LOW confidence)
-- Reolink support search / CGI support references
-  https://support.reolink.com/search/?query=cgi&utf8=%E2%9C%93
+- None. Unverified single-source claims were not elevated into recommendations.
 
 ## Metadata
 
 **Confidence breakdown:**
-- PTZ command family: HIGH - verified directly against the local camera.
-- Preset read/recall strategy: MEDIUM - read path is verified, recall shape is accepted, but user-facing semantics still need a human UAT pass.
-- Architecture: HIGH - existing repo boundaries already strongly imply the right split for PTZ work.
-- Pitfalls: HIGH - we directly observed that preset writes can change camera state and that stop must be treated as a safety path.
+- Standard stack: HIGH - the repo already uses the recommended stack, and package versions were verified from npm.
+- Architecture: HIGH - the current Fastify, session, capability, React, and Vitest seams make the PTZ fit straightforward.
+- Pitfalls: MEDIUM - the main remaining risk is firmware/API inconsistency around zoom direction, preset indexing, and calibration behavior.
 
 **Research date:** 2026-04-14
 **Valid until:** 2026-05-14
