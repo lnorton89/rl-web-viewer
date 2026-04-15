@@ -1,12 +1,18 @@
+import { mkdtemp, writeFile } from "node:fs/promises";
+import os from "node:os";
+import path from "node:path";
+
 import Fastify from "fastify";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import { createServer } from "../../src/server/create-server.js";
 import { ptzRoutes } from "../../src/server/routes/ptz.js";
+import type { LiveViewBootstrap } from "../../src/types/live-view.js";
 import type { PtzBootstrap, PtzService } from "../../src/types/ptz.js";
 
-describe("ptz routes", () => {
-  const apps: Array<Awaited<ReturnType<typeof createApp>>> = [];
+const apps: Array<{ close: () => Promise<unknown> }> = [];
 
+describe("ptz routes", () => {
   afterEach(async () => {
     await Promise.all(apps.splice(0).map((app) => app.close()));
   });
@@ -119,6 +125,95 @@ describe("ptz routes", () => {
       error: "PTZ presets are not available for this camera profile.",
     });
   });
+
+  it("mounts ptz routes through createServer and preserves /api/live-view", async () => {
+    const staticRoot = await createStaticRoot();
+    const service = createPtzService();
+    const app = await createServer({
+      staticRoot,
+      liveView: {
+        buildLiveViewBootstrap: async () => createLiveViewBootstrap(),
+        fetchSnapshot: async () => ({
+          body: new Uint8Array([1, 2, 3]),
+          contentType: "image/jpeg",
+        }),
+        getMediaRelayHealth: () => ({
+          relay: "ready",
+          reason: null,
+        }),
+      },
+      ptz: {
+        createPtzService: () => service,
+      },
+    });
+    apps.push(app);
+
+    const [bootstrapResponse, motionResponse, stopResponse, zoomResponse, presetResponse] =
+      await Promise.all([
+        app.inject({
+          method: "GET",
+          url: "/api/ptz",
+        }),
+        app.inject({
+          method: "POST",
+          url: "/api/ptz/motion/start",
+          payload: { direction: "left" },
+        }),
+        app.inject({
+          method: "POST",
+          url: "/api/ptz/stop",
+          payload: {},
+        }),
+        app.inject({
+          method: "POST",
+          url: "/api/ptz/zoom",
+          payload: { direction: "in" },
+        }),
+        app.inject({
+          method: "POST",
+          url: "/api/ptz/presets/2/recall",
+        }),
+      ]);
+    const liveViewResponse = await app.inject({
+      method: "GET",
+      url: "/api/live-view",
+    });
+
+    expect(bootstrapResponse.statusCode).toBe(200);
+    expect(bootstrapResponse.json<PtzBootstrap>()).toEqual(createBootstrap());
+
+    expect(motionResponse.statusCode).toBe(202);
+    expect(motionResponse.json()).toEqual({
+      direction: "left",
+      stopDeadlineMs: 5000,
+    });
+    expect(service.startMotion).toHaveBeenCalledWith("left");
+
+    expect(stopResponse.statusCode).toBe(200);
+    expect(stopResponse.json()).toEqual({
+      stopped: true,
+      reason: "explicit-stop",
+    });
+    expect(service.stopMotion).toHaveBeenCalledWith("explicit-stop");
+
+    expect(zoomResponse.statusCode).toBe(202);
+    expect(zoomResponse.json()).toEqual({
+      direction: "in",
+      pulseMs: 250,
+    });
+    expect(service.pulseZoom).toHaveBeenCalledWith("in");
+
+    expect(presetResponse.statusCode).toBe(202);
+    expect(presetResponse.json()).toEqual({
+      presetId: 2,
+    });
+    expect(service.recallPreset).toHaveBeenCalledWith(2);
+
+    expect(liveViewResponse.statusCode).toBe(200);
+    expect(liveViewResponse.json<LiveViewBootstrap>()).toEqual(
+      createLiveViewBootstrap(),
+    );
+  });
 });
 
 async function createApp(service: PtzService) {
@@ -126,6 +221,7 @@ async function createApp(service: PtzService) {
   await app.register(ptzRoutes, {
     createPtzService: () => service,
   });
+  apps.push(app);
   return app;
 }
 
@@ -168,5 +264,72 @@ function createPtzService(input: { bootstrap?: PtzBootstrap } = {}): PtzService 
     recallPreset: vi.fn(async (presetId) => ({
       presetId,
     })),
+  };
+}
+
+async function createStaticRoot(): Promise<string> {
+  const staticRoot = await mkdtemp(path.join(os.tmpdir(), "reolink-static-"));
+  const webDirectory = path.join(staticRoot, "web");
+
+  await import("node:fs/promises").then(({ mkdir }) =>
+    mkdir(webDirectory, { recursive: true }),
+  );
+  await writeFile(
+    path.join(webDirectory, "index.html"),
+    "<!doctype html><html><body><div id=\"app\"></div></body></html>",
+    "utf8",
+  );
+
+  return staticRoot;
+}
+
+function createLiveViewBootstrap(): LiveViewBootstrap {
+  return {
+    preferredModeId: "webrtc:main",
+    fallbackOrder: ["webrtc:main", "hls:sub", "snapshot:main"],
+    modes: [
+      {
+        id: "webrtc:main",
+        label: "WebRTC Main",
+        quality: "main",
+        transport: "webrtc",
+        enabled: true,
+        playback: {
+          whepUrl: "http://127.0.0.1:8889/camera_main/whep",
+          hlsUrl: null,
+          snapshotUrl: "/api/live-view/snapshot/main",
+        },
+      },
+      {
+        id: "hls:sub",
+        label: "HLS Sub",
+        quality: "sub",
+        transport: "hls",
+        enabled: true,
+        playback: {
+          whepUrl: null,
+          hlsUrl: "http://127.0.0.1:8888/camera_sub/index.m3u8",
+          snapshotUrl: "/api/live-view/snapshot/sub",
+        },
+      },
+      {
+        id: "snapshot:main",
+        label: "Snapshot Main",
+        quality: "main",
+        transport: "snapshot",
+        enabled: true,
+        playback: {
+          whepUrl: null,
+          hlsUrl: null,
+          snapshotUrl: "/api/live-view/snapshot/main",
+        },
+      },
+    ],
+    diagnostics: {
+      state: "connecting",
+      currentModeId: "webrtc:main",
+      nextFallbackModeId: "hls:sub",
+      reason: null,
+    },
   };
 }

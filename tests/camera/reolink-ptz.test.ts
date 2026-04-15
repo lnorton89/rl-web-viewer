@@ -58,9 +58,9 @@ describe("reolink ptz service", () => {
     const presetFixture = await loadFixture<
       Fixture<readonly ReolinkRequest[], readonly ReolinkApiResponse[]>
     >("get-ptz-preset.json");
-    const requestJson = vi
-      .fn<SessionRequest>()
-      .mockResolvedValue(presetFixture.response);
+    const requestJson = createSessionRequestMock().mockResolvedValue(
+      presetFixture.response,
+    );
     const service = createReolinkPtzService({
       config,
       session: { requestJson },
@@ -85,7 +85,7 @@ describe("reolink ptz service", () => {
   });
 
   it("returns an empty preset list when preset normalization sees no enabled entries", async () => {
-    const requestJson = vi.fn<SessionRequest>().mockResolvedValue([
+    const requestJson = createSessionRequestMock().mockResolvedValue([
       {
         cmd: "GetPtzPreset",
         code: 0,
@@ -111,7 +111,7 @@ describe("reolink ptz service", () => {
   });
 
   it("returns no presets when supportsPtzPreset is false", async () => {
-    const requestJson = vi.fn<SessionRequest>();
+    const requestJson = createSessionRequestMock();
     const service = createReolinkPtzService({
       config,
       session: { requestJson },
@@ -130,7 +130,7 @@ describe("reolink ptz service", () => {
 
   it("writes a debug artifact when preset normalization sees a malformed payload", async () => {
     const directory = await mkdtemp(path.join(os.tmpdir(), "reolink-ptz-debug-"));
-    const requestJson = vi.fn<SessionRequest>().mockResolvedValue([
+    const requestJson = createSessionRequestMock().mockResolvedValue([
       {
         cmd: "GetPtzPreset",
         code: 0,
@@ -165,7 +165,9 @@ describe("reolink ptz service", () => {
     const ptzFixture = await loadFixture<
       Fixture<readonly ReolinkRequest[], readonly ReolinkApiResponse[]>
     >("ptz-ctrl.json");
-    const requestJson = vi.fn<SessionRequest>().mockResolvedValue(ptzFixture.response);
+    const requestJson = createSessionRequestMock().mockResolvedValue(
+      ptzFixture.response,
+    );
     const service = createReolinkPtzService({
       config,
       session: { requestJson },
@@ -193,7 +195,7 @@ describe("reolink ptz service", () => {
   });
 
   it("treats explicit stop as idempotent stop when no motion is active", async () => {
-    const requestJson = vi.fn<SessionRequest>();
+    const requestJson = createSessionRequestMock();
     const service = createReolinkPtzService({
       config,
       session: { requestJson },
@@ -215,7 +217,9 @@ describe("reolink ptz service", () => {
     const ptzFixture = await loadFixture<
       Fixture<readonly ReolinkRequest[], readonly ReolinkApiResponse[]>
     >("ptz-ctrl.json");
-    const requestJson = vi.fn<SessionRequest>().mockResolvedValue(ptzFixture.response);
+    const requestJson = createSessionRequestMock().mockResolvedValue(
+      ptzFixture.response,
+    );
     const service = createReolinkPtzService({
       config,
       session: { requestJson },
@@ -244,7 +248,9 @@ describe("reolink ptz service", () => {
     const ptzFixture = await loadFixture<
       Fixture<readonly ReolinkRequest[], readonly ReolinkApiResponse[]>
     >("ptz-ctrl.json");
-    const requestJson = vi.fn<SessionRequest>().mockResolvedValue(ptzFixture.response);
+    const requestJson = createSessionRequestMock().mockResolvedValue(
+      ptzFixture.response,
+    );
     const service = createReolinkPtzService({
       config,
       session: { requestJson },
@@ -291,7 +297,9 @@ describe("reolink ptz service", () => {
     const ptzFixture = await loadFixture<
       Fixture<readonly ReolinkRequest[], readonly ReolinkApiResponse[]>
     >("ptz-ctrl.json");
-    const requestJson = vi.fn<SessionRequest>().mockResolvedValue(ptzFixture.response);
+    const requestJson = createSessionRequestMock().mockResolvedValue(
+      ptzFixture.response,
+    );
     const service = createReolinkPtzService({
       config,
       session: { requestJson },
@@ -325,8 +333,7 @@ describe("reolink ptz service", () => {
     const ptzFixture = await loadFixture<
       Fixture<readonly ReolinkRequest[], readonly ReolinkApiResponse[]>
     >("ptz-ctrl.json");
-    const requestJson = vi
-      .fn<SessionRequest>()
+    const requestJson = createSessionRequestMock()
       .mockResolvedValueOnce(presetFixture.response)
       .mockResolvedValueOnce(ptzFixture.response);
     const service = createReolinkPtzService({
@@ -359,8 +366,7 @@ describe("reolink ptz service", () => {
     const presetFixture = await loadFixture<
       Fixture<readonly ReolinkRequest[], readonly ReolinkApiResponse[]>
     >("get-ptz-preset.json");
-    const requestJson = vi
-      .fn<SessionRequest>()
+    const requestJson = createSessionRequestMock()
       .mockResolvedValueOnce(presetFixture.response)
       .mockResolvedValueOnce([
         {
@@ -394,6 +400,19 @@ describe("reolink ptz service", () => {
 type SessionRequest = <TResponse extends readonly ReolinkApiResponse[]>(
   commands: readonly ReolinkRequest[],
 ) => Promise<TResponse>;
+
+type SessionRequestMock = ReturnType<
+  typeof vi.fn<
+    (commands: readonly ReolinkRequest[]) => Promise<readonly ReolinkApiResponse[]>
+  >
+> &
+  SessionRequest;
+
+function createSessionRequestMock(): SessionRequestMock {
+  return vi.fn<
+    (commands: readonly ReolinkRequest[]) => Promise<readonly ReolinkApiResponse[]>
+  >() as SessionRequestMock;
+}
 
 async function loadFixture<T>(name: string): Promise<T> {
   const fileUrl = new URL(`../fixtures/reolink/${name}`, import.meta.url);
