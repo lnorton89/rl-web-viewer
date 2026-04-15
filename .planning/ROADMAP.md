@@ -118,7 +118,7 @@ Success criteria:
 Plans:
 - [x] 04-01-PLAN.md - Define shared settings contracts, safe setter strategies, and verified camera service coverage
 - [x] 04-02-PLAN.md - Expose browser-safe settings routes and mount them on the Fastify control plane
-- [ ] 04-03-PLAN.md - Build the settings panel, section review UX, and browser interaction tests
+- [x] 04-03-PLAN.md - Build the settings panel, section review UX, and browser interaction tests
 
 ### Phase 5: Hardening & Modular Expansion Base
 

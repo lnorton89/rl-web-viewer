@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: executing
-stopped_at: Completed 04-02-PLAN.md
-last_updated: "2026-04-15T20:00:37.926Z"
+status: verifying
+stopped_at: Completed 04-03-PLAN.md
+last_updated: "2026-04-15T20:17:05.917Z"
 last_activity: 2026-04-15
 progress:
   total_phases: 5
-  completed_phases: 3
+  completed_phases: 4
   total_plans: 13
-  completed_plans: 12
+  completed_plans: 13
   percent: 20
 ---
 
@@ -27,7 +27,7 @@ See: `.planning/PROJECT.md` (updated 2026-04-13)
 
 Phase: 04 (settings-safe-configuration) — EXECUTING
 Plan: 3 of 3
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-04-15
 
 Progress: `[##--------]` 20%
@@ -60,6 +60,7 @@ Progress: `[##--------]` 20%
 | Phase 03 P03 | 9 min | 2 tasks | 8 files |
 | Phase 04-settings-safe-configuration P01 | 14min | 2 tasks | 9 files |
 | Phase 04-settings-safe-configuration P02 | 7 min | 2 tasks | 3 files |
+| Phase 04-settings-safe-configuration P03 | 10min | 2 tasks | 10 files |
 
 ## Accumulated Context
 
@@ -92,6 +93,9 @@ Recent decisions affecting current work:
 - [Phase 04-settings-safe-configuration]: Treat camera rereads as the source of truth for success and fail writes when verification shows no camera change.
 - [Phase 04-settings-safe-configuration]: Derive settings route validation from shared fieldSpecs metadata so bounds and options stay aligned with the service/bootstrap contract.
 - [Phase 04-settings-safe-configuration]: Return structured 409/422 settings failures with fieldErrors and optional sectionError so the browser can distinguish unsupported writes from rejected values.
+- [Phase 04-settings-safe-configuration]: Drive all settings controls from shared fieldSpecs metadata so browser constraints and options stay aligned with backend validation.
+- [Phase 04-settings-safe-configuration]: Move post-apply focus to each settings card status region so verified and error results are announced immediately.
+- [Phase 04-settings-safe-configuration]: Keep App-level live-view and PTZ tests isolated by mocking the mounted SettingsPanel instead of bootstrapping settings state in unrelated suites.
 
 ### Pending Todos
 
@@ -103,6 +107,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-15T20:00:37.921Z
-Stopped at: Completed 04-02-PLAN.md
+Last session: 2026-04-15T20:17:05.912Z
+Stopped at: Completed 04-03-PLAN.md
 Resume file: None
