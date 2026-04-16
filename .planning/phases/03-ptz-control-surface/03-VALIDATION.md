@@ -19,7 +19,7 @@ created: 2026-04-14
 |----------|-------|
 | **Framework** | Vitest 4.1.4 |
 | **Config file** | `vitest.config.ts` |
-| **Quick run command** | `npx vitest run tests/camera/reolink-ptz.test.ts tests/server/ptz-routes.test.ts -x` |
+| **Quick run command** | `npx vitest run tests/camera/reolink-ptz.test.ts tests/server/ptz-routes.test.ts tests/web/ptz-controls.test.tsx -x` |
 | **Full suite command** | `npm test` |
 | **Estimated runtime** | ~30 seconds |
 
@@ -27,7 +27,7 @@ created: 2026-04-14
 
 ## Sampling Rate
 
-- **After every task commit:** Run `npx vitest run tests/camera/reolink-ptz.test.ts tests/server/ptz-routes.test.ts -x`
+- **After every task commit:** Run `npx vitest run tests/camera/reolink-ptz.test.ts tests/server/ptz-routes.test.ts tests/web/ptz-controls.test.tsx -x`
 - **After every plan wave:** Run `npm test`
 - **Before `$gsd-verify-work`:** Full suite must be green
 - **Max feedback latency:** 30 seconds
@@ -40,11 +40,11 @@ created: 2026-04-14
 |---------|------|------|-------------|-----------|-------------------|-------------|--------|
 | 03-01-01 | 01 | 1 | PTZ-01 | unit | `npx vitest run tests/camera/reolink-ptz.test.ts -x` | ❌ W0 | ⬜ pending |
 | 03-01-02 | 01 | 1 | PTZ-03 | unit | `npx vitest run tests/camera/reolink-ptz.test.ts -x` | ❌ W0 | ⬜ pending |
-| 03-02-01 | 02 | 1 | PTZ-01 | integration | `npx vitest run tests/server/ptz-routes.test.ts -x` | ❌ W0 | ⬜ pending |
-| 03-02-02 | 02 | 1 | PTZ-02 | integration | `npx vitest run tests/server/ptz-routes.test.ts -x` | ❌ W0 | ⬜ pending |
-| 03-03-01 | 03 | 2 | PTZ-01 | jsdom | `npx vitest run tests/web/ptz-controls.test.tsx -x` | ❌ W0 | ⬜ pending |
-| 03-03-02 | 03 | 2 | PTZ-02 | jsdom | `npx vitest run tests/web/ptz-controls.test.tsx -x` | ❌ W0 | ⬜ pending |
-| 03-03-03 | 03 | 2 | PTZ-03 | jsdom | `npx vitest run tests/web/ptz-controls.test.tsx -x` | ❌ W0 | ⬜ pending |
+| 03-02-01 | 02 | 2 | PTZ-01 | integration | `npx vitest run tests/server/ptz-routes.test.ts -x` | ❌ W0 | ⬜ pending |
+| 03-02-02 | 02 | 2 | PTZ-02 | integration | `npx vitest run tests/server/ptz-routes.test.ts -x` | ❌ W0 | ⬜ pending |
+| 03-03-01 | 03 | 3 | PTZ-01 | jsdom | `npx vitest run tests/web/ptz-controls.test.tsx -x` | ❌ W0 | ⬜ pending |
+| 03-03-02 | 03 | 3 | PTZ-02 | jsdom | `npx vitest run tests/web/ptz-controls.test.tsx -x` | ❌ W0 | ⬜ pending |
+| 03-03-03 | 03 | 3 | PTZ-03 | jsdom | `npx vitest run tests/web/ptz-controls.test.tsx -x` | ❌ W0 | ⬜ pending |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
@@ -56,7 +56,7 @@ created: 2026-04-14
 - [ ] `tests/server/ptz-routes.test.ts` - route validation, capability gating, and browser-safe payload coverage
 - [ ] `tests/web/ptz-controls.test.tsx` - hold/release stop lifecycle, zoom click behavior, and preset rendering
 - [ ] `tests/fixtures/reolink/get-ptz-preset.json` - sanitized preset fixture payload
-- [ ] `tests/fixtures/reolink/ptz-ctrl-left.json` - sanitized representative PTZ success payload
+- [ ] `tests/fixtures/reolink/ptz-ctrl.json` - sanitized representative PTZ success payload
 
 ---
 

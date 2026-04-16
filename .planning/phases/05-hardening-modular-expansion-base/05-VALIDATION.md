@@ -2,8 +2,8 @@
 phase: 05
 slug: hardening-modular-expansion-base
 status: draft
-nyquist_compliant: false
-wave_0_complete: false
+nyquist_compliant: true
+wave_0_complete: true
 created: 2026-04-15
 ---
 
@@ -38,24 +38,28 @@ created: 2026-04-15
 
 | Task ID | Plan | Wave | Requirement | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|-----------|-------------------|-------------|--------|
-| 05-01-01 | 01 | 1 | PH5-SC1 | unit | `npx vitest run tests/camera/adapter-contract.test.ts` | MISSING W0 | pending |
-| 05-01-02 | 01 | 1 | PH5-SC4 | unit/doc | `npx vitest run tests/camera/adapter-contract.test.ts tests/camera` | MISSING W0 | pending |
-| 05-02-01 | 02 | 2 | PH5-SC3 | unit | `npx vitest run tests/server/diagnostics-logging.test.ts tests/debug-capture.test.ts` | MISSING W0 | pending |
-| 05-02-02 | 02 | 2 | PH5-SC2 | integration | `npx vitest run tests/media/live-view-repeatability.test.ts tests/server/dashboard-bootstrap-repeatability.test.ts tests/server/live-view-routes.test.ts` | MISSING W0 | pending |
-| 05-03-01 | 03 | 3 | PH5-SC2 | jsdom | `npx vitest run tests/web/repeated-use-flows.test.tsx tests/web/live-view-controls.test.tsx --project web` | MISSING W0 | pending |
-| 05-03-02 | 03 | 3 | PH5-SC3 | build/jsdom | `npm run build:web && npx vitest run tests/web/repeated-use-flows.test.tsx tests/web/live-view-controls.test.tsx --project web` | MISSING W0 | pending |
+| 05-01-01 | 01 | 1 | PH5-SC1 | unit | `npx vitest run tests/camera/adapter-contract.test.ts --project node` | created in task 05-01-01 | pending |
+| 05-01-02 | 01 | 1 | PH5-SC4 | unit | `npx vitest run tests/camera/adapter-contract.test.ts tests/camera/reolink-ptz.test.ts tests/camera/reolink-settings.test.ts --project node` | uses task 05-01 test ownership | pending |
+| 05-02-01 | 02 | 2 | PH5-SC3 | unit | `npx vitest run tests/server/diagnostics-logging.test.ts tests/debug-capture.test.ts --project node` | created in task 05-02-01 | pending |
+| 05-02-02 | 02 | 2 | PH5-SC2 | integration | `npx vitest run tests/media/live-view-repeatability.test.ts tests/server/dashboard-bootstrap-repeatability.test.ts tests/server/live-view-routes.test.ts --project node` | created in task 05-02-02 | pending |
+| 05-03-01 | 03 | 3 | PH5-SC2 | jsdom | `npx vitest run tests/web/repeated-use-flows.test.tsx tests/web/live-view-controls.test.tsx --project web` | created in task 05-03-01 | pending |
+| 05-03-02 | 03 | 3 | PH5-SC3 | build/jsdom | `npm run build:web && npx vitest run tests/web/repeated-use-flows.test.tsx tests/web/live-view-controls.test.tsx --project web` | uses task 05-03-01 test ownership | pending |
 
 *Status: pending, green, red, flaky*
 
 ---
 
-## Wave 0 Requirements
+## Wave 0 Resolution
 
-- [ ] `tests/camera/adapter-contract.test.ts` - locks the new adapter interface and one RLC-423S implementation against it
-- [ ] `tests/server/diagnostics-logging.test.ts` - verifies request correlation, sanitized log fields, and artifact linkage
-- [ ] `tests/web/repeated-use-flows.test.tsx` - exercises retry/reconnect/reapply loops across viewer/PTZ/settings surfaces
-- [ ] `tests/media/live-view-repeatability.test.ts` - covers relay startup/restart/failure classification loops
-- [ ] `tests/server/dashboard-bootstrap-repeatability.test.ts` - covers repeated dashboard bootstrap/connect/session recovery without process restart
+Phase 05 does not require a separate scaffold-only Wave 0. The current plans satisfy Nyquist by creating missing test files inside the TDD implementation tasks that consume them:
+
+- [x] `tests/camera/adapter-contract.test.ts` is created in plan 05-01 task 1 before adapter implementation work
+- [x] `tests/server/diagnostics-logging.test.ts` is created in plan 05-02 task 1 before diagnostics implementation work
+- [x] `tests/media/live-view-repeatability.test.ts` is created in plan 05-02 task 2 before repeatability hardening work
+- [x] `tests/server/dashboard-bootstrap-repeatability.test.ts` is created in plan 05-02 task 2 before dashboard/session recovery work
+- [x] `tests/web/repeated-use-flows.test.tsx` is created in plan 05-03 task 1 before browser recovery work
+
+No task in 05-01, 05-02, or 05-03 relies on a separate unplanned Wave 0 artifact.
 
 ---
 
@@ -70,11 +74,11 @@ created: 2026-04-15
 
 ## Validation Sign-Off
 
-- [ ] All tasks have `<automated>` verify or Wave 0 dependencies
-- [ ] Sampling continuity: no 3 consecutive tasks without automated verify
-- [ ] Wave 0 covers all MISSING references
-- [ ] No watch-mode flags
-- [ ] Feedback latency < 30s
-- [ ] `nyquist_compliant: true` set in frontmatter
+- [x] All tasks have `<automated>` verify and none depend on missing pre-task scaffolds
+- [x] Sampling continuity: no 3 consecutive tasks without automated verify
+- [x] Wave 0 expectations resolved by task-level TDD ownership instead of separate scaffolds
+- [x] No watch-mode flags
+- [x] Feedback latency < 30s
+- [x] `nyquist_compliant: true` set in frontmatter
 
-**Approval:** pending
+**Approval:** Nyquist sign-off complete for the current plan structure
