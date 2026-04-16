@@ -5,6 +5,7 @@ import { describe, expect, it } from "vitest";
 import type { CameraConfig } from "../../src/config/camera-config.js";
 import type { CapabilitySnapshot } from "../../src/camera/capability-snapshot.js";
 import type { CameraAdapter } from "../../src/camera/adapters/camera-adapter.js";
+import { createRlc423sAdapter } from "../../src/camera/adapters/reolink-rlc-423s-adapter.js";
 import {
   getRegisteredCameraAdapters,
   registerCameraAdapters,
@@ -48,11 +49,17 @@ const snapshot: CapabilitySnapshot = {
 
 describe("camera adapter contract", () => {
   it("exposes one adapter object that owns discovery, capabilities, streams, ptz, settings, and failure classification", async () => {
-    const adapter = resolveCameraAdapter(snapshot.identity);
+    const adapter = createRlc423sAdapter();
 
     expectAdapterShape(adapter);
     expect(adapter.adapterId).toBe("reolink-rlc-423s");
     expect(adapter.matchesIdentity(snapshot.identity)).toBe(true);
+    expect(
+      adapter.matchesIdentity({
+        ...snapshot.identity,
+        model: "rlc-423s",
+      }),
+    ).toBe(true);
     expect(adapter.resolveLiveStreams(config, snapshot)).toMatchObject({
       main: { quality: "main" },
       sub: { quality: "sub" },
@@ -68,16 +75,28 @@ describe("camera adapter contract", () => {
     registerCameraAdapters();
 
     const adapters = getRegisteredCameraAdapters();
+    const resolvedAdapter = resolveCameraAdapter(snapshot.identity);
 
     expect(adapters).toHaveLength(1);
     expect(adapters[0]?.adapterId).toBe("reolink-rlc-423s");
-    expect(resolveCameraAdapter(snapshot.identity)?.adapterId).toBe(
-      "reolink-rlc-423s",
-    );
+    expect(resolvedAdapter?.adapterId).toBe("reolink-rlc-423s");
+    expect(resolvedAdapter).toBe(adapters[0]);
 
     for (const adapter of adapters) {
       expectAdapterShape(adapter);
     }
+  });
+
+  it.each([
+    [{ code: "ENOENT", message: "missing fixture" }, "Required files are missing"],
+    [{ code: "EACCES", message: "permission denied" }, "Access was denied"],
+    [new Error("request timed out"), "Request timed out"],
+    [new Error("unsupported model"), "Firmware or model is unsupported"],
+    [new Error("unexpected failure"), "Operation failed"],
+  ])("normalizes %o failures", (error, expected) => {
+    const adapter = createRlc423sAdapter();
+
+    expect(adapter.classifyFailure("settings", error)).toBe(expected);
   });
 
   it("documents the future model extension steps and points contributors to fixtures as proof", async () => {
