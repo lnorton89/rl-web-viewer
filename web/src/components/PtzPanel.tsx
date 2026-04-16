@@ -1,3 +1,4 @@
+import { Paper } from "@mui/material";
 import { PtzPresetGrid } from "./PtzPresetGrid.js";
 import { usePtzControls } from "../hooks/use-ptz-controls.js";
 
@@ -26,7 +27,11 @@ export function PtzPanel() {
     busyAction?.kind === "stopping";
 
   return (
-    <section className="ptz-panel" aria-labelledby="ptz-panel-heading">
+    <Paper
+      component="section"
+      sx={{ p: 2, bgcolor: 'background.paper' }}
+      aria-labelledby="ptz-panel-heading"
+    >
       <div className="section-heading">
         <p className="support-label">Camera Control</p>
         <h2 id="ptz-panel-heading">PTZ Control</h2>
@@ -156,6 +161,6 @@ export function PtzPanel() {
           ) : null}
         </div>
       )}
-    </section>
+    </Paper>
   );
 }

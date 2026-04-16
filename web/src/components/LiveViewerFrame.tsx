@@ -1,5 +1,6 @@
 import type { LiveViewPlayback, LiveModeId } from "../../../src/types/live-view.js";
 
+import { Box } from "@mui/material";
 import { ViewerStatusOverlay } from "./ViewerStatusOverlay.js";
 
 type ViewerState = {
@@ -29,7 +30,18 @@ export function LiveViewerFrame({
   state,
 }: LiveViewerFrameProps) {
   return (
-    <section className="viewer-frame" aria-label="Live viewer">
+    <Box
+      component="section"
+      sx={{
+        width: '100%',
+        maxWidth: '100%',
+        bgcolor: 'background.paper',
+        borderRadius: 1,
+        overflow: 'hidden',
+        position: 'relative',
+      }}
+      aria-label="Live viewer"
+    >
       <video
         ref={renderKind === "video" ? bindVideoElement : undefined}
         className="viewer-surface"
@@ -57,6 +69,6 @@ export function LiveViewerFrame({
         reason={state.reason}
         stateKind={state.kind}
       />
-    </section>
+    </Box>
   );
 }

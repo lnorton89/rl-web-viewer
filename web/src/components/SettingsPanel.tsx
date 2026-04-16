@@ -1,3 +1,4 @@
+import { Paper } from "@mui/material";
 import { useSettings } from "../hooks/use-settings.js";
 import { SettingsSectionCard } from "./SettingsSectionCard.js";
 
@@ -11,7 +12,11 @@ export function SettingsPanel() {
   );
 
   return (
-    <section className="settings-panel" aria-labelledby="settings-panel-heading">
+    <Paper
+      component="section"
+      sx={{ p: 2, bgcolor: 'background.paper' }}
+      aria-labelledby="settings-panel-heading"
+    >
       <div className="section-heading">
         <p className="support-label">Safe Configuration</p>
         <h2 id="settings-panel-heading">Inspect and apply trusted camera settings</h2>
@@ -51,6 +56,6 @@ export function SettingsPanel() {
           ))}
         </div>
       )}
-    </section>
+    </Paper>
   );
 }

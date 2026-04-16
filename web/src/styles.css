@@ -47,27 +47,13 @@ a:focus-visible {
   outline-offset: 2px;
 }
 
-.app-shell {
-  min-height: 100vh;
-  padding: 64px 24px 48px;
-  background:
-    radial-gradient(circle at right top, rgba(99, 199, 178, 0.12), transparent 32%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.02), transparent 24%),
-    var(--color-dominant);
-}
-
-.viewer-dashboard {
-  width: min(1120px, 100%);
-  margin: 0 auto;
-  display: grid;
-  gap: 24px;
-}
-
-.viewer-hero {
-  max-width: 640px;
-  display: grid;
-  gap: 8px;
-}
+/* .app-shell - handled by LayoutShell */
+/* .viewer-dashboard - handled by MUI Box */
+/* .viewer-hero - handled by section titles */
+/* .viewer-ptz-cluster - handled by section layout */
+/* .live-viewer-frame - handled by MUI Box */
+/* .ptz-panel - handled by MUI Paper */
+/* .settings-panel - handled by MUI Paper */
 
 .viewer-kicker,
 .support-label {
