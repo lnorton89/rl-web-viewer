@@ -17,6 +17,10 @@
 | 5 | Settings Parity | Advanced ISP controls | CONF-05, CONF-06, CONF-07, CONF-08 | 4 |
 | 6 | User Management | Password change | USER-01 | 1 |
 
+Plans:
+- [x] 01-01-PLAN.md — MUI foundation (dependencies, theme, LayoutShell)
+- [x] 01-02-PLAN.md — Component integration (LiveViewer, PTZ, Settings sections)
+
 ## Phase Details
 
 ### Phase 1: UI Modernization
