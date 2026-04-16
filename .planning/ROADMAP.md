@@ -12,7 +12,7 @@
 | 2 | Browser Live View Pipeline | Deliver a modern live-view path that works in a browser without Flash | LIVE-01, LIVE-02, LIVE-03 | 4 |
 | 3 | PTZ Control Surface | Expose responsive pan/tilt/zoom and preset operations in the local dashboard | PTZ-01, PTZ-02, PTZ-03 | 4 |
 | 4 | Settings & Safe Configuration | Add read/write settings management with validation and verification loops | CONF-01, CONF-02, CONF-03, CONF-04 | 4 |
-| 5 | Hardening & Modular Expansion Base | Tighten reliability, polish UX, and leave the codebase ready for additional camera adapters | Cross-cutting polish for prior requirements | 4 |
+| 5 | Hardening & Modular Expansion Base | 3/3 | Complete   | 2026-04-16 |
 
 ## Phase Details
 
@@ -137,12 +137,12 @@ Success criteria:
 
 **UI hint**: yes
 
-**Plans:** 3 plans
+**Plans:** 3/3 plans complete
 
 Plans:
 - [x] 05-01-PLAN.md - Define the explicit camera adapter contract, registry, and RLC-423S implementation seam
-- [ ] 05-02-PLAN.md - Centralize backend diagnostics and harden live-view/runtime repeatability
-- [ ] 05-03-PLAN.md - Polish repeated-use browser flows and complete a real-camera hardening pass
+- [x] 05-02-PLAN.md - Centralize backend diagnostics and harden live-view/runtime repeatability
+- [x] 05-03-PLAN.md - Polish repeated-use browser flows and complete a real-camera hardening pass
 
 ## Sequence Rationale
 
