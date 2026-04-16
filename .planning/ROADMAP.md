@@ -2,7 +2,7 @@
 
 ## Overview
 
-**5 phases** | **17 v1 requirements mapped** | All v1 requirements covered
+**7 phases** | **17 v1 requirements mapped** | All v1 requirements covered | v1.0 gaps closing
 
 ## Phases
 
@@ -13,6 +13,8 @@
 | 3 | PTZ Control Surface | Expose responsive pan/tilt/zoom and preset operations in the local dashboard | PTZ-01, PTZ-02, PTZ-03 | 4 |
 | 4 | Settings & Safe Configuration | Add read/write settings management with validation and verification loops | CONF-01, CONF-02, CONF-03, CONF-04 | 4 |
 | 5 | Hardening & Modular Expansion Base | 3/3 | Complete   | 2026-04-16 |
+| 6 | Phase 1 Verification & Capability Wiring | Close v1.0 audit gaps — verify Phase 1, confirm capability snapshot wiring | Gap closure | 3 |
+| 7 | Real-Camera E2E Hardening | Run real-camera E2E pass for complete v1.0 milestone | Gap closure | 5 |
 
 ## Phase Details
 
@@ -153,5 +155,50 @@ The roadmap de-risks the two biggest unknowns first:
 
 Once those are stable, PTZ and settings become straightforward feature layers instead of guesswork stacked on top of unknown transport behavior.
 
+### Phase 6: Phase 1 Verification & Capability Wiring
+
+Goal: Close v1.0 audit gaps — verify Phase 1 requirements and confirm capability snapshot wiring to downstream phases.
+
+Requirements:
+
+- Gap closure — Phase 1 verification missing
+- Gap closure — Cross-phase capability snapshot wiring
+
+Success criteria:
+
+1. Phase 1 requirements (CONN-01 through COMP-03) verified with evidence.
+2. Capability snapshot is consumed by Phase 2 live-view, Phase 3 PTZ, and Phase 4 settings.
+3. Cross-phase wiring documented and tested.
+
+**Depends on:** Phase 5
+
+**UI hint**: no
+
+**Plans:** 1 plan
+
+Plans:
+- [x] 06-01-PLAN.md - Verify Phase 1 requirements and confirm capability snapshot wiring
+
+### Phase 7: Real-Camera E2E Hardening
+
+Goal: Complete the real-camera verification pass for v1.0 milestone completeness.
+
+Requirements:
+
+- Gap closure — Real-camera E2E pass incomplete
+
+Success criteria:
+
+1. Start app → confirm viewer connects to RLC-423S
+2. Retry Live View → verify recovery without restart
+3. PTZ hold/release → confirm "Motion stopped" state
+4. Apply safe setting → confirm "Verified" reread
+5. Open diagnostics post-failure → confirm short reason without credentials
+
+**Depends on:** Phase 6
+
+**UI hint**: no
+
 ---
 *Roadmap created: 2026-04-13*
+*Updated: 2026-04-16*
