@@ -140,7 +140,7 @@ Success criteria:
 **Plans:** 3 plans
 
 Plans:
-- [ ] 05-01-PLAN.md - Define the explicit camera adapter contract, registry, and RLC-423S implementation seam
+- [x] 05-01-PLAN.md - Define the explicit camera adapter contract, registry, and RLC-423S implementation seam
 - [ ] 05-02-PLAN.md - Centralize backend diagnostics and harden live-view/runtime repeatability
 - [ ] 05-03-PLAN.md - Polish repeated-use browser flows and complete a real-camera hardening pass
 
