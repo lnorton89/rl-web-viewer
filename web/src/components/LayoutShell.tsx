@@ -1,17 +1,17 @@
 import { ReactNode } from 'react';
-import { Box, Drawer, List, ListItemButton, ListItemIcon, ListItemText, AppBar, Toolbar, Typography } from '@mui/material';
-import { Videocam, Settings, PanTool } from '@mui/icons-material';
+import { Box, Drawer, List, ListItemButton, ListItemIcon, ListItemText, Toolbar, Tooltip, Typography } from '@mui/material';
+import { Videocam, Settings } from '@mui/icons-material';
 
 interface NavItem {
   id: string;
   label: string;
+  tooltip: string;
   icon: ReactNode;
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { id: 'live', label: 'Live View', icon: <Videocam /> },
-  { id: 'ptz', label: 'PTZ', icon: <PanTool /> },
-  { id: 'settings', label: 'Settings', icon: <Settings /> },
+  { id: 'live', label: 'Live View', tooltip: 'View camera live feed', icon: <Videocam /> },
+  { id: 'settings', label: 'Settings', tooltip: 'Configure camera settings', icon: <Settings /> },
 ];
 
 const SIDEBAR_WIDTH = 200;
@@ -25,7 +25,6 @@ interface LayoutShellProps {
 export function LayoutShell({ children, activeSection, onSectionChange }: LayoutShellProps) {
   return (
     <Box sx={{ display: 'flex', minHeight: '100vh' }}>
-      {/* Sidebar */}
       <Drawer
         variant="permanent"
         sx={{
@@ -39,25 +38,27 @@ export function LayoutShell({ children, activeSection, onSectionChange }: Layout
         }}
       >
         <Toolbar>
-          <Typography variant="h6" noWrap>
-            Reolink
-          </Typography>
+          <Tooltip title="Reolink RLC-423S Camera Dashboard" placement="right">
+            <Typography variant="h6" noWrap sx={{ cursor: 'default' }}>
+              Reolink
+            </Typography>
+          </Tooltip>
         </Toolbar>
         <List>
           {NAV_ITEMS.map((item) => (
-            <ListItemButton
-              key={item.id}
-              selected={activeSection === item.id}
-              onClick={() => onSectionChange(item.id)}
-            >
-              <ListItemIcon>{item.icon}</ListItemIcon>
-              <ListItemText primary={item.label} />
-            </ListItemButton>
+            <Tooltip key={item.id} title={item.tooltip} placement="right">
+              <ListItemButton
+                selected={activeSection === item.id}
+                onClick={() => onSectionChange(item.id)}
+              >
+                <ListItemIcon>{item.icon}</ListItemIcon>
+                <ListItemText primary={item.label} />
+              </ListItemButton>
+            </Tooltip>
           ))}
         </List>
       </Drawer>
 
-      {/* Main content */}
       <Box
         component="main"
         sx={{

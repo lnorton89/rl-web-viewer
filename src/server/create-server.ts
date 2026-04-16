@@ -15,8 +15,13 @@ import {
   settingsRoutes,
   type SettingsRouteDependencies,
 } from "./routes/settings.js";
+import {
+  audioRoutes,
+  type AudioRouteDependencies,
+} from "./routes/audio.js";
 
 export type CreateServerOptions = {
+  audio?: AudioRouteDependencies;
   liveView?: LiveViewRouteDependencies;
   ptz?: PtzRouteDependencies;
   settings?: SettingsRouteDependencies;
@@ -57,6 +62,7 @@ export async function createServer(
   await app.register(liveViewRoutes, options.liveView ?? {});
   await app.register(ptzRoutes, options.ptz ?? {});
   await app.register(settingsRoutes, options.settings ?? {});
+  await app.register(audioRoutes, options.audio ?? {});
 
   return app;
 }

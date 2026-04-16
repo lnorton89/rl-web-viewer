@@ -66,7 +66,7 @@ describe("live view controls", () => {
     render(<App />);
 
     expect(
-      screen.getByRole("button", { name: "Retry Live View" }),
+      screen.getByRole("button", { name: "Attempt to reconnect using the same mode" }),
     ).not.toBeNull();
   });
 
@@ -91,7 +91,7 @@ describe("live view controls", () => {
 
     render(<App />);
 
-    fireEvent.click(screen.getByRole("button", { name: "Diagnostics" }));
+    fireEvent.click(screen.getByRole("button", { name: "Show detailed transport information" }));
 
     expect(screen.getByText("Last reason")).not.toBeNull();
     expect(screen.getAllByText("WebRTC handshake timed out").length).toBeGreaterThan(0);

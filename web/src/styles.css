@@ -719,6 +719,48 @@ a:focus-visible {
   min-height: 44px;
 }
 
+.ptz-slider-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.ptz-slider-button {
+  min-width: 60px;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.05);
+  color: #eef5f3;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 200ms ease, border-color 200ms ease;
+}
+
+.ptz-slider-button:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.22);
+}
+
+.ptz-slider-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.ptz-slider-value {
+  min-width: 80px;
+  text-align: center;
+  font-weight: 600;
+  color: var(--color-accent);
+}
+
+.ptz-speed-slider,
+.ptz-focus-slider,
+.ptz-iris-slider {
+  flex: 1;
+  accent-color: var(--color-accent);
+}
+
 .ptz-preset-grid {
   display: grid;
   gap: 8px;

@@ -8,9 +8,13 @@ import type {
   PtzZoomDirection,
 } from "../../../src/types/ptz.js";
 import {
+  fetchPtzAdvanced,
   fetchPtzBootstrap,
   pulsePtzZoom,
   recallPtzPreset,
+  setFocus,
+  setIris,
+  setSpeed,
   startPtzMotion,
   stopPtzMotion,
 } from "../lib/ptz-api.js";
@@ -57,10 +61,16 @@ type UsePtzControlsResult = {
   statusText: string;
   supportsPtzControl: boolean;
   supportsPtzPreset: boolean;
+  focusValue: number;
+  irisValue: number;
+  speedValue: number;
   getMotionButtonProps(direction: PtzDirection): MotionButtonProps;
   pulseZoom(direction: PtzZoomDirection): Promise<void>;
   recallPreset(presetId: number): Promise<void>;
   stopMotion(reason?: PtzStopReason): Promise<void>;
+  setFocus(value: number): Promise<void>;
+  setIris(value: number): Promise<void>;
+  setSpeed(value: number): Promise<void>;
 };
 
 export function usePtzControls(): UsePtzControlsResult {
@@ -76,6 +86,9 @@ export function usePtzControls(): UsePtzControlsResult {
   });
   const [statusText, setStatusText] = useState(BOOTSTRAP_STATUS_COPY);
   const [errorText, setErrorText] = useState<string | null>(null);
+  const [focusValue, setFocusValue] = useState(50);
+  const [irisValue, setIrisValue] = useState(50);
+  const [speedValue, setSpeedValue] = useState(5);
 
   const motionSessionRef = useRef<MotionSession | null>(null);
   const stopPromiseRef = useRef<Promise<void> | null>(null);
@@ -214,6 +227,16 @@ export function usePtzControls(): UsePtzControlsResult {
           bootstrap.supportsPtzControl ? READY_STATUS_COPY : UNSUPPORTED_COPY,
         );
         setErrorText(null);
+
+        if (bootstrap.supportsPtzControl) {
+          void fetchPtzAdvanced(abortController.signal)
+            .then(({ focus, iris, speed }) => {
+              setFocusValue(focus);
+              setIrisValue(iris);
+              setSpeedValue(speed);
+            })
+            .catch(() => {});
+        }
       })
       .catch((error: unknown) => {
         if (abortController.signal.aborted) {
@@ -405,6 +428,60 @@ export function usePtzControls(): UsePtzControlsResult {
     [requestStop],
   );
 
+  const setFocusHandler = useCallback(
+    async (value: number) => {
+      if (!supportsPtzControl) {
+        return;
+      }
+
+      try {
+        const result = await setFocus(value);
+        setFocusValue(result.focus);
+        setTransientStatus(`Focus set to ${result.focus}`);
+      } catch (error: unknown) {
+        setStatusText(COMMAND_FAILURE_COPY);
+        setErrorText(getErrorMessage(error, COMMAND_FAILURE_COPY));
+      }
+    },
+    [supportsPtzControl, setTransientStatus],
+  );
+
+  const setIrisHandler = useCallback(
+    async (value: number) => {
+      if (!supportsPtzControl) {
+        return;
+      }
+
+      try {
+        const result = await setIris(value);
+        setIrisValue(result.iris);
+        setTransientStatus(`Iris set to ${result.iris}`);
+      } catch (error: unknown) {
+        setStatusText(COMMAND_FAILURE_COPY);
+        setErrorText(getErrorMessage(error, COMMAND_FAILURE_COPY));
+      }
+    },
+    [supportsPtzControl, setTransientStatus],
+  );
+
+  const setSpeedHandler = useCallback(
+    async (value: number) => {
+      if (!supportsPtzControl) {
+        return;
+      }
+
+      try {
+        const result = await setSpeed(value);
+        setSpeedValue(result.speed);
+        setTransientStatus(`Speed set to ${result.speed}`);
+      } catch (error: unknown) {
+        setStatusText(COMMAND_FAILURE_COPY);
+        setErrorText(getErrorMessage(error, COMMAND_FAILURE_COPY));
+      }
+    },
+    [supportsPtzControl, setTransientStatus],
+  );
+
   return {
     errorText,
     activeDirection,
@@ -414,10 +491,16 @@ export function usePtzControls(): UsePtzControlsResult {
     statusText,
     supportsPtzControl,
     supportsPtzPreset,
+    focusValue,
+    irisValue,
+    speedValue,
     getMotionButtonProps,
     pulseZoom,
     recallPreset,
     stopMotion,
+    setFocus: setFocusHandler,
+    setIris: setIrisHandler,
+    setSpeed: setSpeedHandler,
   };
 }
 

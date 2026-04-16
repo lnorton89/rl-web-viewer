@@ -7,6 +7,8 @@ import { writeDebugArtifact } from "../diagnostics/debug-capture.js";
 import { ReolinkSession } from "./reolink-session.js";
 import type { ReolinkApiResponse, ReolinkRequest } from "../types/reolink.js";
 import type {
+  FocusResult,
+  IrisResult,
   MotionStartResult,
   MotionStopResult,
   PresetRecallResult,
@@ -16,6 +18,7 @@ import type {
   PtzStopReason,
   PtzDirection,
   PtzZoomDirection,
+  SpeedResult,
   ZoomPulseResult,
 } from "../types/ptz.js";
 
@@ -209,6 +212,90 @@ export function createReolinkPtzService(
     };
   }
 
+  async function setFocus(value: number): Promise<FocusResult> {
+    const snapshot = await resolveSnapshot();
+    assertSupportsPtzControl(snapshot);
+
+    const clampedValue = Math.max(0, Math.min(100, value));
+
+    const request = [
+      {
+        cmd: "SetFocus",
+        action: 0,
+        param: {
+          channel: DEFAULT_CHANNEL,
+          focus: clampedValue,
+          op: "SetFocus",
+        },
+      },
+    ] as const;
+
+    await sendPtzCtrlRequest({
+      request,
+      resolveConfig,
+      resolveSession,
+      debugArtifactDirectory: options.debugArtifactDirectory,
+    });
+
+    return { focusValue: clampedValue };
+  }
+
+  async function setIris(value: number): Promise<IrisResult> {
+    const snapshot = await resolveSnapshot();
+    assertSupportsPtzControl(snapshot);
+
+    const clampedValue = Math.max(0, Math.min(100, value));
+
+    const request = [
+      {
+        cmd: "SetIris",
+        action: 0,
+        param: {
+          channel: DEFAULT_CHANNEL,
+          iris: clampedValue,
+          op: "SetIris",
+        },
+      },
+    ] as const;
+
+    await sendPtzCtrlRequest({
+      request,
+      resolveConfig,
+      resolveSession,
+      debugArtifactDirectory: options.debugArtifactDirectory,
+    });
+
+    return { irisValue: clampedValue };
+  }
+
+  async function setSpeed(value: number): Promise<SpeedResult> {
+    const snapshot = await resolveSnapshot();
+    assertSupportsPtzControl(snapshot);
+
+    const clampedValue = Math.max(1, Math.min(10, value));
+
+    const request = [
+      {
+        cmd: "SetPtzSpeed",
+        action: 0,
+        param: {
+          channel: DEFAULT_CHANNEL,
+          speed: clampedValue,
+          op: "SetPtzSpeed",
+        },
+      },
+    ] as const;
+
+    await sendPtzCtrlRequest({
+      request,
+      resolveConfig,
+      resolveSession,
+      debugArtifactDirectory: options.debugArtifactDirectory,
+    });
+
+    return { speedValue: clampedValue };
+  }
+
   function resetWatchdog(): void {
     clearWatchdog();
     watchdogTimer = setTimer(() => {
@@ -229,6 +316,9 @@ export function createReolinkPtzService(
     stopMotion,
     pulseZoom,
     recallPreset,
+    setFocus,
+    setIris,
+    setSpeed,
   };
 }
 

@@ -583,6 +583,9 @@ function createPtzService(
     recallPreset: vi.fn(async (presetId) => ({
       presetId,
     })),
+    setFocus: vi.fn(async (value) => ({ focusValue: value })),
+    setIris: vi.fn(async (value) => ({ irisValue: value })),
+    setSpeed: vi.fn(async (value) => ({ speedValue: value })),
   };
 }
 

@@ -134,6 +134,16 @@ Success criteria:
 
 **UI hint**: yes
 
+### Phase 8: Live View Enhancement
+
+**Goal:** [To be planned]
+**Requirements**: TBD
+**Depends on:** Phase 7
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd-plan-phase 8 to break down)
+
 ---
 
 *Roadmap created: 2026-04-13*

@@ -1,5 +1,6 @@
 import type { PtzPreset } from "../../../src/types/ptz.js";
 import type { PtzBusyAction } from "../hooks/use-ptz-controls.js";
+import { Tooltip } from "@mui/material";
 
 type PtzPresetGridProps = {
   busyAction: PtzBusyAction;
@@ -46,18 +47,21 @@ export function PtzPresetGrid({
             busyAction?.kind === "preset" && busyAction.presetId === preset.id;
 
           return (
-            <button
-              key={preset.id}
-              className="ptz-preset-button"
-              data-active={isActive}
-              disabled={controlsDisabled}
-              type="button"
-              onClick={() => {
-                void onRecallPreset(preset.id);
-              }}
-            >
-              {preset.name}
-            </button>
+            <Tooltip key={preset.id} title={`Recall preset: ${preset.name}`} placement="top">
+              <span>
+                <button
+                  className="ptz-preset-button"
+                  data-active={isActive}
+                  disabled={controlsDisabled}
+                  type="button"
+                  onClick={() => {
+                    void onRecallPreset(preset.id);
+                  }}
+                >
+                  {preset.name}
+                </button>
+              </span>
+            </Tooltip>
           );
         })}
       </div>

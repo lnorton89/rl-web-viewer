@@ -2,6 +2,10 @@ export type PtzDirection = "up" | "down" | "left" | "right";
 
 export type PtzZoomDirection = "in" | "out";
 
+export type FocusResult = { focusValue: number };
+export type IrisResult = { irisValue: number };
+export type SpeedResult = { speedValue: number };
+
 export type PtzStopReason =
   | "release"
   | "explicit-stop"
@@ -49,4 +53,7 @@ export interface PtzService {
   stopMotion(reason: PtzStopReason): Promise<MotionStopResult>;
   pulseZoom(direction: PtzZoomDirection): Promise<ZoomPulseResult>;
   recallPreset(presetId: number): Promise<PresetRecallResult>;
+  setFocus(value: number): Promise<FocusResult>;
+  setIris(value: number): Promise<IrisResult>;
+  setSpeed(value: number): Promise<SpeedResult>;
 }

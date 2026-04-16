@@ -1,4 +1,5 @@
 import type { LiveModeId, ViewerStateKind } from "../../../src/types/live-view.js";
+import { Tooltip } from "@mui/material";
 
 const OVERLAY_LABELS: Record<ViewerStateKind, string> = {
   connecting: "Connecting",
@@ -37,25 +38,35 @@ export function ViewerStatusOverlay({
     <div className="viewer-overlay" data-state={stateKind}>
       <div className="overlay-panel" data-live={stateKind === "live"}>
         <div className="overlay-badge-row">
-          <span className="status-dot" data-kind={stateKind} aria-hidden="true" />
+          <Tooltip title={`Status: ${label}`} placement="left">
+            <span className="status-dot" data-kind={stateKind} aria-hidden="true" />
+          </Tooltip>
           <span className="status-label">{label}</span>
         </div>
 
-        <p className="overlay-mode">{currentModeLabel}</p>
+        <Tooltip title="Current streaming mode" placement="left">
+          <p className="overlay-mode">{currentModeLabel}</p>
+        </Tooltip>
 
         {shortReason === null ? null : (
-          <p className="overlay-reason">{shortReason}</p>
+          <Tooltip title={reason || shortReason} placement="left">
+            <p className="overlay-reason">{shortReason}</p>
+          </Tooltip>
         )}
 
         {nextFallbackModeId === null ? null : (
-          <p className="overlay-fallback">Next fallback: {nextFallbackModeId}</p>
+          <Tooltip title="If current mode fails, will automatically switch to this mode" placement="left">
+            <p className="overlay-fallback">Next fallback: {nextFallbackModeId}</p>
+          </Tooltip>
         )}
 
         {stateKind === "failed" ? (
           <div className="overlay-actions">
-            <button className="retry-button" type="button" onClick={() => void onRetry()}>
-              Retry Live View
-            </button>
+            <Tooltip title="Attempt to reconnect using the same mode" placement="top">
+              <button className="retry-button" type="button" onClick={() => void onRetry()}>
+                Retry Live View
+              </button>
+            </Tooltip>
           </div>
         ) : null}
 

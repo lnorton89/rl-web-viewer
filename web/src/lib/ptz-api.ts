@@ -62,6 +62,51 @@ export async function recallPtzPreset(
   );
 }
 
+export async function fetchPtzAdvanced(
+  signal?: AbortSignal,
+): Promise<{ focus: number; iris: number; speed: number }> {
+  return requestJson<{ focus: number; iris: number; speed: number }>(
+    `${PTZ_ENDPOINT}/advanced`,
+    {
+      method: "GET",
+      signal,
+    },
+  );
+}
+
+export async function setFocus(
+  focus: number,
+  signal?: AbortSignal,
+): Promise<{ focus: number }> {
+  return requestJson<{ focus: number }>(`${PTZ_ENDPOINT}/focus`, {
+    method: "POST",
+    body: { focus },
+    signal,
+  });
+}
+
+export async function setIris(
+  iris: number,
+  signal?: AbortSignal,
+): Promise<{ iris: number }> {
+  return requestJson<{ iris: number }>(`${PTZ_ENDPOINT}/iris`, {
+    method: "POST",
+    body: { iris },
+    signal,
+  });
+}
+
+export async function setSpeed(
+  speed: number,
+  signal?: AbortSignal,
+): Promise<{ speed: number }> {
+  return requestJson<{ speed: number }>(`${PTZ_ENDPOINT}/speed`, {
+    method: "POST",
+    body: { speed },
+    signal,
+  });
+}
+
 async function requestJson<T>(
   url: string,
   input: {

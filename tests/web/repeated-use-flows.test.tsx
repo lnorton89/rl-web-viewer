@@ -3,24 +3,47 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import App from "../../web/src/App.js";
 import { useLiveView } from "../../web/src/hooks/use-live-view.js";
+import { fetchPtzAdvanced } from "../../web/src/lib/ptz-api.js";
 
 vi.mock("../../web/src/hooks/use-live-view.js", () => ({
   useLiveView: vi.fn(),
+}));
+
+vi.mock("../../web/src/lib/ptz-api.js", () => ({
+  fetchPtzBootstrap: vi.fn().mockResolvedValue({
+    supportsPtzControl: true,
+    supportsPtzPreset: false,
+    hasVisibleStop: true,
+    presets: [],
+  }),
+  fetchPtzAdvanced: vi.fn().mockResolvedValue({
+    focus: 50,
+    iris: 50,
+    speed: 5,
+  }),
 }));
 
 vi.mock("../../web/src/components/PtzPanel.js", () => ({
   PtzPanel: () => <div data-testid="ptz-panel">PTZ Panel</div>,
 }));
 
+
+
 vi.mock("../../web/src/components/SettingsPanel.js", () => ({
   SettingsPanel: () => <div data-testid="settings-panel">Settings Panel</div>,
 }));
 
 const useLiveViewMock = vi.mocked(useLiveView);
+const fetchPtzAdvancedMock = vi.mocked(fetchPtzAdvanced);
 
 describe("repeated use flows", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    fetchPtzAdvancedMock.mockResolvedValue({
+      focus: 50,
+      iris: 50,
+      speed: 5,
+    });
   });
 
   afterEach(() => {
@@ -47,7 +70,7 @@ describe("repeated use flows", () => {
 
       render(<App />);
 
-      expect(screen.getByRole("button", { name: "Retry Live View" })).not.toBeNull();
+      expect(screen.getByRole("button", { name: "Attempt to reconnect using the same mode" })).not.toBeNull();
     });
 
     it("preserves diagnostics as secondary disclosure after retry", async () => {
@@ -71,7 +94,7 @@ describe("repeated use flows", () => {
       expect(screen.queryByText("Last reason")).toBeNull();
 
       // Click diagnostics toggle
-      fireEvent.click(screen.getByRole("button", { name: "Diagnostics" }));
+      fireEvent.click(screen.getByRole("button", { name: "Show detailed transport information" }));
 
       // Now diagnostics should be visible with "Last reason" label
       expect(screen.getByText("Last reason")).not.toBeNull();
@@ -98,7 +121,7 @@ describe("repeated use flows", () => {
 
       // Click retry multiple times
       for (let i = 0; i < 3; i++) {
-        fireEvent.click(screen.getByRole("button", { name: "Retry Live View" }));
+        fireEvent.click(screen.getByRole("button", { name: "Attempt to reconnect using the same mode" }));
         await waitFor(() => {
           expect(mockRetry).toHaveBeenCalledTimes(i + 1);
         });
@@ -125,7 +148,7 @@ describe("repeated use flows", () => {
       render(<App />);
 
       // Retry button should be hidden in live state
-      expect(screen.queryByRole("button", { name: "Retry Live View" })).toBeNull();
+      expect(screen.queryByRole("button", { name: "Attempt to reconnect using the same mode" })).toBeNull();
     });
   });
 
@@ -146,6 +169,8 @@ describe("repeated use flows", () => {
       } as ReturnType<typeof useLiveView>);
 
       render(<App />);
+
+      fireEvent.click(screen.getByRole("button", { name: "Configure camera settings" }));
 
       // Settings panel should be rendered
       expect(screen.getByTestId("settings-panel")).not.toBeNull();

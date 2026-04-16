@@ -1,6 +1,7 @@
 import { useState } from "react";
 
 import type { LiveModeId } from "../../../src/types/live-view.js";
+import { Tooltip } from "@mui/material";
 
 type DiagnosticsDisclosureProps = {
   currentModeId: LiveModeId | null;
@@ -29,17 +30,19 @@ export function DiagnosticsDisclosure({
         <h2 id="diagnostics-heading">Transport details stay secondary</h2>
       </div>
 
-      <button
-        aria-controls="diagnostics-panel"
-        aria-expanded={isOpen}
-        className="diagnostics-toggle"
-        type="button"
-        onClick={() => {
-          setIsOpen((value) => !value);
-        }}
-      >
-        Diagnostics
-      </button>
+      <Tooltip title={isOpen ? "Hide diagnostic information" : "Show detailed transport information"} placement="top">
+        <button
+          aria-controls="diagnostics-panel"
+          aria-expanded={isOpen}
+          className="diagnostics-toggle"
+          type="button"
+          onClick={() => {
+            setIsOpen((value) => !value);
+          }}
+        >
+          Diagnostics
+        </button>
+      </Tooltip>
 
       {isOpen ? (
         <div className="diagnostics-panel" id="diagnostics-panel">

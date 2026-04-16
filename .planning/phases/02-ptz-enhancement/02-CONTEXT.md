@@ -48,9 +48,10 @@ Success criteria:
 - Default value persisted in local state
 
 ### Component Integration
-- **D-04:** New components: FocusControl, IrisControl, SpeedSlider
-- Added to existing PtzPanel.tsx after zoom section
-- Follow existing MUI + CSS Modules pattern from Phase 1
+- **D-04:** PTZ controls in right sidebar of Live View
+- PtzPanel displayed in 280px right sidebar on live view page
+- Navigation sidebar shows only Live View and Settings
+- Follow existing MUI Paper pattern for the panel
 
 ### API Design
 - **D-05:** PTZ service interface extends to support focus/iris/speed
@@ -66,12 +67,15 @@ Success criteria:
 - `src/types/ptz.ts` — PTZ type definitions to extend
 - `src/camera/reolink-ptz.ts` — PTZ service implementation
 - `src/server/routes/ptz.ts` — PTZ API routes
-- `web/src/components/PtzPanel.tsx` — Existing PTZ UI (Phase 1)
+- `web/src/components/PtzControlsInline.tsx` — Inline PTZ controls in Live View
+- `web/src/components/PtzPanel.tsx` — Full PTZ panel (presets, motion controls)
 - `web/src/hooks/use-ptz-controls.ts` — Existing PTZ hook
 
 ### MUI Components
 - `web/src/theme/theme.ts` — Dark theme configuration (Phase 1)
 - `@mui/material Slider` — MUI Slider component
+- `@mui/material IconButton` — Icon buttons for controls
+- `@mui/material Tooltip` — Hover tooltips
 
 ### Camera API
 - RLC-423S firmware v2.0.0.1055 API for focus/iris/speed commands
@@ -104,6 +108,8 @@ Success criteria:
 - Speed affects pan/tilt movement speed only (not zoom)
 - Focus and iris use same 0-100 range as camera API
 - Controls visible only when PTZ is available (feature detection)
+- PTZ controls inline in Live View for quick access while viewing
+- Full PtzPanel retained for preset management and detailed controls
 
 </specifics>
 

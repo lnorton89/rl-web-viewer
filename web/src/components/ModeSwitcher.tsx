@@ -1,4 +1,5 @@
 import type { LiveMode, LiveModeId } from "../../../src/types/live-view.js";
+import { Tooltip } from "@mui/material";
 
 type ModeSwitcherProps = {
   currentModeId: LiveModeId | null;
@@ -23,18 +24,24 @@ export function ModeSwitcher({
           const isActive = mode.id === currentModeId;
 
           return (
-            <button
+            <Tooltip
               key={mode.id}
-              aria-pressed={isActive}
-              className="mode-button"
-              data-active={isActive}
-              disabled={!mode.enabled}
-              title={mode.disabledReason}
-              type="button"
-              onClick={() => void onSelectMode(mode.id)}
+              title={mode.disabledReason || (mode.enabled ? `Switch to ${mode.label}` : 'Mode unavailable')}
+              placement="top"
             >
-              <span>{mode.label}</span>
-            </button>
+              <span>
+                <button
+                  aria-pressed={isActive}
+                  className="mode-button"
+                  data-active={isActive}
+                  disabled={!mode.enabled}
+                  type="button"
+                  onClick={() => void onSelectMode(mode.id)}
+                >
+                  <span>{mode.label}</span>
+                </button>
+              </span>
+            </Tooltip>
           );
         })}
       </div>

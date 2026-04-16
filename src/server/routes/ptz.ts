@@ -41,6 +41,18 @@ const presetParamsSchema = z.object({
   presetId: z.coerce.number().int().nonnegative(),
 });
 
+const focusBodySchema = z.object({
+  focus: z.number().int().min(0).max(100),
+});
+
+const irisBodySchema = z.object({
+  iris: z.number().int().min(0).max(100),
+});
+
+const speedBodySchema = z.object({
+  speed: z.number().int().min(1).max(10),
+});
+
 const PTZ_CONTROL_UNAVAILABLE_ERROR =
   "PTZ control is not available for this camera profile.";
 const PTZ_PRESET_UNAVAILABLE_ERROR =
@@ -132,6 +144,68 @@ export const ptzRoutes: FastifyPluginAsync<PtzRouteDependencies> = async (
     reply.code(202);
     return reply.send(await service.recallPreset(params.presetId));
   });
+
+  app.get("/api/ptz/advanced", async (_request, reply) => {
+    const service = await resolveService();
+
+    if (!(await requireControlSupport(service, reply))) {
+      return;
+    }
+
+    return reply.send({
+      focus: 50,
+      iris: 50,
+      speed: 5,
+    });
+  });
+
+  app.post("/api/ptz/focus", async (request, reply) => {
+    const body = parseBody(focusBodySchema, request.body, reply);
+
+    if (!body) {
+      return;
+    }
+
+    const service = await resolveService();
+
+    if (!(await requireControlSupport(service, reply))) {
+      return;
+    }
+
+    return reply.send(await service.setFocus(body.focus));
+  });
+
+  app.post("/api/ptz/iris", async (request, reply) => {
+    const body = parseBody(irisBodySchema, request.body, reply);
+
+    if (!body) {
+      return;
+    }
+
+    const service = await resolveService();
+
+    if (!(await requireControlSupport(service, reply))) {
+      return;
+    }
+
+    return reply.send(await service.setIris(body.iris));
+  });
+
+  app.post("/api/ptz/speed", async (request, reply) => {
+    const body = parseBody(speedBodySchema, request.body, reply);
+
+    if (!body) {
+      return;
+    }
+
+    const service = await resolveService();
+
+    if (!(await requireControlSupport(service, reply))) {
+      return;
+    }
+
+    return reply.send(await service.setSpeed(body.speed));
+  });
 };
 
 function parseBody<T extends z.ZodTypeAny>(
@@ -216,6 +290,9 @@ export const ptzRouteSchemas = {
   ptzDirectionSchema,
   ptzStopReasonSchema,
   ptzZoomDirectionSchema,
+  focusBodySchema,
+  irisBodySchema,
+  speedBodySchema,
 };
 
 export type PtzRouteDirection = PtzDirection;

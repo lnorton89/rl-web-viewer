@@ -58,6 +58,15 @@ The camera is a Reolink RLC-423S with hardware `IPC_3816M` and firmware `v2.0.0.
 - **Compatibility**: No Flash or browser plugins
 - **Architecture**: Modular camera adapters
 
+## Development Tools
+
+### Material-UI MCP Server
+This project uses MUI. When working on UI phases, use the `@mujs/mcp-mui-docs` MCP server for component guidance:
+- Enabled MCP server: `mui-mcp`
+- Provides access to MUI component documentation and examples
+- Use `mui-mcp_useMuiDocs` for searching MUI docs
+- Use `mui-mcp_fetchDocs` for fetching specific documentation pages
+
 ## Key Decisions
 
 | Decision | Rationale | Outcome |
