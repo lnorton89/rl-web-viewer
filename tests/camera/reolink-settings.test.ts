@@ -111,10 +111,10 @@ describe("reolink settings bootstrap contract", () => {
 });
 
 describe("reolink settings strategy contract", () => {
-  it("marks SetImage and SetEnc as full-object setters while patch sections stay narrow", () => {
+  it("marks SetOsd, SetImage, and SetEnc as full-object setters while patch sections stay narrow", () => {
     expect(SETTINGS_WRITE_STRATEGIES).toMatchObject({
       time: "patch",
-      osd: "patch",
+      osd: "full-object",
       image: "full-object",
       stream: "full-object",
       isp: "read-only",
@@ -336,6 +336,78 @@ describe("reolink settings service apply", () => {
             hue: 128,
             saturation: 110,
             sharpen: 128,
+          },
+        },
+      },
+    ]);
+  });
+
+  it("uses the full-object strategy for osd updates instead of a narrow SetOsd patch", async () => {
+    const beforeOsd = await loadFixture<readonly ReolinkApiResponse[]>("get-osd.json");
+    const afterOsd = structuredClone(beforeOsd);
+
+    (
+      afterOsd[0]!.value as {
+        Osd: {
+          osdChannel: {
+            enable: number;
+            name: string;
+            pos: string;
+          };
+        };
+      }
+    ).Osd.osdChannel.enable = 0;
+
+    const requestJson = createSessionRequestMock()
+      .mockResolvedValueOnce(beforeOsd)
+      .mockResolvedValueOnce([
+        {
+          cmd: "SetOsd",
+          code: 0,
+          value: { rspCode: 200 },
+        },
+      ])
+      .mockResolvedValueOnce(afterOsd);
+    const service = createReolinkSettingsService({
+      config,
+      session: { requestJson },
+      loadSnapshot: async () => snapshot,
+    });
+
+    const result = await service.applySection("osd", {
+      osdChannel: {
+        enable: false,
+      },
+    });
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.changedFields).toEqual([
+        {
+          fieldPath: "osd.osdChannel.enable",
+          label: "Show Camera Name",
+          beforeValue: true,
+          afterValue: false,
+          verified: true,
+        },
+      ]);
+    }
+    expect(requestJson.mock.calls[1]?.[0]).toEqual([
+      {
+        cmd: "SetOsd",
+        action: 0,
+        param: {
+          Osd: {
+            channel: 0,
+            osdChannel: {
+              enable: 0,
+              name: "Front Gate",
+              pos: "Upper Left",
+            },
+            osdTime: {
+              enable: 1,
+              pos: "Lower Right",
+            },
           },
         },
       },

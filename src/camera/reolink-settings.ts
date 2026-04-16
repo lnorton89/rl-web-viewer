@@ -618,7 +618,22 @@ async function applyOsdSection(input: {
       cmd: "SetOsd",
       action: 0,
       param: {
-        Osd: osdPayload,
+        Osd: {
+          ...beforeState.osdRaw,
+          ...osdPayload,
+          osdChannel: osdPayload.osdChannel
+            ? {
+                ...beforeState.osdRaw.osdChannel,
+                ...osdPayload.osdChannel,
+              }
+            : beforeState.osdRaw.osdChannel,
+          osdTime: osdPayload.osdTime
+            ? {
+                ...beforeState.osdRaw.osdTime,
+                ...osdPayload.osdTime,
+              }
+            : beforeState.osdRaw.osdTime,
+        },
       },
     },
   ] as const satisfies readonly ReolinkRequest[];
@@ -956,8 +971,14 @@ function normalizeTimeDraft(draft: TimeSettingsDraft): Record<string, unknown> |
 
 function normalizeOsdDraft(
   draft: OsdSettingsDraft,
-): Record<string, unknown> | null {
-  const osdValue: Record<string, unknown> = {};
+): {
+  osdChannel?: Record<string, unknown>;
+  osdTime?: Record<string, unknown>;
+} | null {
+  const osdValue: {
+    osdChannel?: Record<string, unknown>;
+    osdTime?: Record<string, unknown>;
+  } = {};
 
   if (draft.osdChannel && Object.keys(draft.osdChannel).length > 0) {
     osdValue.osdChannel = Object.fromEntries(

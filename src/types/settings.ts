@@ -252,7 +252,7 @@ export interface SettingsService {
 
 export const SETTINGS_WRITE_STRATEGIES = {
   time: "patch",
-  osd: "patch",
+  osd: "full-object",
   image: "full-object",
   stream: "full-object",
   isp: "read-only",
