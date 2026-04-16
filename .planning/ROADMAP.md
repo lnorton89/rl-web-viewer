@@ -199,6 +199,11 @@ Success criteria:
 
 **UI hint**: no
 
+**Plans:** 1 plan
+
+Plans:
+- [x] 07-01-PLAN.md — Real-camera E2E hardening pass
+
 ---
 *Roadmap created: 2026-04-13*
 *Updated: 2026-04-16*
