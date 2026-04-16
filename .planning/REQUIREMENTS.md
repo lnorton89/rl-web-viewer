@@ -1,9 +1,44 @@
 # Requirements: Reolink RLC-423S Node Console
 
-**Defined:** 2026-04-13
-**Core Value:** Reliable local live view and PTZ/control of the RLC-423S from a modern browser without depending on Flash, cloud services, or the old vendor web UI.
+**Defined:** 2026-04-16
+**Milestone:** v1.1
+**Core Value:** Modern UI dashboard + feature parity with built-in Reolink web dashboard
 
-## v1 Requirements
+## v1.1 Requirements
+
+### UI Modernization
+
+- [ ] **UI-01**: User can view all controls in a single desktop browser window without scrolling.
+- [ ] **UI-02**: User can access Live View, PTZ, and Settings from a unified navigation.
+- [ ] **UI-03**: UI uses a modern framework (React/Vue/Svelte) instead of current implementation.
+
+### PTZ Enhancement
+
+- [ ] **PTZ-04**: User can adjust camera focus (near/far) from the PTZ panel.
+- [ ] **PTZ-05**: User can adjust camera iris (open/close) from the PTZ panel.
+- [ ] **PTZ-06**: User can adjust PTZ movement speed via slider control.
+
+### Live View Enhancement
+
+- [ ] **LIVE-04**: User can hear audio from the camera during live view (if camera supports audio input).
+
+### Network & System
+
+- [ ] **NET-01**: User can view camera network information (IP, subnet, gateway, MAC).
+- [ ] **NET-02**: User can change camera network settings (IP, subnet, gateway).
+
+### Settings Parity (v1.1 targeted)
+
+- [ ] **CONF-05**: User can control anti-flicker (50Hz/60Hz/Off).
+- [ ] **CONF-06**: User can control white balance mode and manual gains.
+- [ ] **CONF-07**: User can control backlight compensation (BLC/DRC).
+- [ ] **CONF-08**: User can control day/night mode.
+
+### User Management
+
+- [ ] **USER-01**: User can change the camera admin password through the app.
+
+## v1.0 Requirements (Carried Forward)
 
 ### Connectivity
 
@@ -37,61 +72,17 @@
 - [x] **COMP-02**: User only sees controls that are supported by the connected camera/firmware, rather than broken or misleading UI.
 - [x] **COMP-03**: User can enable a debug mode that captures unsupported or unexpected API responses for troubleshooting and future model support.
 
-## v2 Requirements
+## v2 Requirements (Backlog)
 
-### Expanded Device Support
+Future milestones - not in v1.1 scope:
 
-- **MULT-01**: User can add more than one camera to the app.
-- **MULT-02**: User can connect compatible Reolink models beyond the RLC-423S through additional adapters.
-
-### Expanded Camera Features
-
-- **PLAY-01**: User can browse recordings or playback history from the dashboard.
-- **ALRM-01**: User can inspect and configure alarm or motion-triggered behavior.
-- **PTZ-04**: User can create, edit, and delete PTZ presets or patrol routes.
-
-### Access & Operations
-
-- **AUTH-01**: User can protect the local dashboard with its own app-level login.
-- **REM-01**: User can access the dashboard remotely beyond the LAN.
-
-## Out of Scope
-
-| Feature | Reason |
-|---------|--------|
-| Reolink cloud/P2P integration | LAN-only access is the intended v1 scope |
-| Multi-user roles and permissions | Single-user personal workflow for now |
-| NVR-focused workflows | The initial target is one standalone RLC-423S |
-| Mobile-native apps | Browser-based local dashboard is sufficient for v1 |
-| Broad cross-model support on day one | Architecture should allow it, but delivery targets one known model first |
-
-## Traceability
-
-| Requirement | Phase | Status |
-|-------------|-------|--------|
-| CONN-01 | Phase 1 | Complete |
-| CONN-02 | Phase 1 | Complete |
-| CONN-03 | Phase 1 | Complete |
-| CONN-04 | Phase 1 | Complete |
-| COMP-01 | Phase 1 | Complete |
-| COMP-02 | Phase 1 | Complete |
-| COMP-03 | Phase 1 | Complete |
-| LIVE-01 | Phase 2 | Complete |
-| LIVE-02 | Phase 2 | Complete |
-| LIVE-03 | Phase 2 | Complete |
-| PTZ-01 | Phase 3 | Complete |
-| PTZ-02 | Phase 3 | Complete |
-| PTZ-03 | Phase 3 | Complete |
-| CONF-01 | Phase 4 | Complete |
-| CONF-02 | Phase 4 | Complete |
-| CONF-03 | Phase 4 | Complete |
-| CONF-04 | Phase 4 | Complete |
-
-**Coverage:**
-- v1 requirements: 17 total
-- Mapped to phases: 17
-- Unmapped: 0 ✓
+- Multi-camera support
+- SD card playback
+- Recording to local storage
+- Motion detection alerts
+- Mobile companion app
+- Cloud backup
 
 ---
-*Requirements defined: 2026-04-13*
-*Last updated: 2026-04-14 after Phase 1 completion*
+
+*Requirements defined: 2026-04-16 for v1.1*
