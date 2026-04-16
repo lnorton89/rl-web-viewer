@@ -1,5 +1,6 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
+import { DarkTheme } from "./theme/DarkTheme.js";
 
 import App from "./App.js";
 import "./styles.css";
@@ -12,6 +13,8 @@ if (rootElement === null) {
 
 createRoot(rootElement).render(
   <StrictMode>
-    <App />
+    <DarkTheme>
+      <App />
+    </DarkTheme>
   </StrictMode>,
 );
