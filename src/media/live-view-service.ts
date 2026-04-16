@@ -2,9 +2,8 @@ import { spawn, type ChildProcess } from "node:child_process";
 import { access } from "node:fs/promises";
 import { constants } from "node:fs";
 
-import {
-  loadCapabilitySnapshot,
-} from "../camera/capability-snapshot.js";
+import { loadCapabilitySnapshot } from "../camera/capability-snapshot.js";
+import { resolveCameraAdapter } from "../camera/adapters/index.js";
 import { resolveReolinkLiveStreams } from "../camera/reolink-live-streams.js";
 import { loadCameraConfig } from "../config/camera-config.js";
 import { writeDebugArtifact } from "../diagnostics/debug-capture.js";
@@ -151,6 +150,7 @@ export function getMediaRelayHealth(): MediaRelayHealth {
 }
 
 export function classifyLiveViewFailure(error: unknown): string {
+  // Use local classification
   const message =
     error instanceof Error ? error.message.toLowerCase() : String(error).toLowerCase();
 
@@ -175,6 +175,25 @@ export function classifyLiveViewFailure(error: unknown): string {
   }
 
   return "Live view is unavailable";
+}
+
+export function classifyLiveViewFailureWithAdapter(
+  error: unknown,
+  model: string,
+): string {
+  // Try to use adapter classification first
+  const adapter = resolveCameraAdapter({
+    model,
+    hardVer: "",
+    firmVer: "",
+  });
+
+  if (adapter) {
+    return adapter.classifyFailure("live-view", error);
+  }
+
+  // Fall back to local classification
+  return classifyLiveViewFailure(error);
 }
 
 function hydrateMode(

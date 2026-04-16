@@ -5,6 +5,7 @@ import path from "node:path";
 import fastifyStatic from "@fastify/static";
 import Fastify, { type FastifyInstance } from "fastify";
 
+import { diagnosticsPlugin } from "./plugins/diagnostics.js";
 import {
   liveViewRoutes,
   type LiveViewRouteDependencies,
@@ -50,6 +51,8 @@ export async function createServer(
       "<!doctype html><html><body><div id=\"app\"></div></body></html>",
     );
   });
+
+  await app.register(diagnosticsPlugin);
 
   await app.register(liveViewRoutes, options.liveView ?? {});
   await app.register(ptzRoutes, options.ptz ?? {});
