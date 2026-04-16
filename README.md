@@ -1,8 +1,8 @@
 # Reolink RLC-423S Node Console
 
-A modern, local Node.js application that replaces the legacy Flash-dependent browser dashboard for the **Reolink RLC-423S** IP camera. Provides reliable LAN-only live view, PTZ control, and camera settings management from any modern browser — no Flash, no cloud, no vendor web UI required.
+**v1.0** — A modern, local Node.js application that replaces the legacy Flash-dependent browser dashboard for the **Reolink RLC-423S** IP camera. Provides reliable LAN-only live view, PTZ control, and camera settings management from any modern browser — no Flash, no cloud, no vendor web UI required.
 
-## Features
+## v1.0 Delivered Features
 
 - **Live View** — Browser-safe video streaming via WebRTC, HLS, or snapshot fallback, relayed through a local MediaMTX runtime
 - **PTZ Control** — Pan/Tilt/Zoom controls with preset management for supported cameras
@@ -20,8 +20,15 @@ A modern, local Node.js application that replaces the legacy Flash-dependent bro
 | **Frontend** | React 19 + Vite |
 | **Validation** | Zod (runtime schema validation) |
 | **Media Relay** | MediaMTX (`v1.17.1`) for RTSP → WebRTC/HLS |
-| **Testing** | Vitest + Testing Library |
+| **Testing** | Vitest + Testing Library (123 tests) |
 | **Logging** | Pino (structured debug logging) |
+
+## v1.0 Milestone
+
+- **7 phases** completed
+- **17 requirements** validated
+- **102 commits** in v1.0 development
+- Real-camera E2E verification pass complete
 
 ## Prerequisites
 
@@ -329,6 +336,10 @@ To add a new model:
 - **Single-user** — Designed for personal/local network use
 - **Windows-first** — MediaMTX bootstrap currently supports Windows only (expandable)
 - **No Flash** — Fully modern browser-based, no plugins required
+
+## Project History
+
+- **v1.0** (2026-04-16) — Initial release: live view, PTZ, settings, camera adapter extension contract
 
 ## License
 
