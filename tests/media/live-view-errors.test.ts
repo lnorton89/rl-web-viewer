@@ -61,11 +61,15 @@ describe("live-view bootstrap failures", () => {
     await writeCapabilitySnapshot(createSnapshot());
 
     const bootstrap = await buildLiveViewBootstrap("localhost:4000");
+    const hlsMain = bootstrap.modes.find((mode) => mode.id === "hls:main");
     const webrtcMain = bootstrap.modes.find((mode) => mode.id === "webrtc:main");
     const hlsSub = bootstrap.modes.find((mode) => mode.id === "hls:sub");
     const snapshotMain = bootstrap.modes.find((mode) => mode.id === "snapshot:main");
 
-    expect(bootstrap.preferredModeId).toBe("webrtc:main");
+    expect(bootstrap.preferredModeId).toBe("hls:main");
+    expect(hlsMain?.playback.hlsUrl).toBe(
+      "http://localhost:8888/camera_main/index.m3u8",
+    );
     expect(webrtcMain?.playback.whepUrl).toBe(
       "http://localhost:8889/camera_main/whep",
     );
@@ -133,6 +137,7 @@ function createSnapshot(
     supportsPtzPatrol: true,
     supportsSnapshot: true,
     supportsConfigRead: true,
+    supportsAudio: true,
     ...overrides,
   };
 }

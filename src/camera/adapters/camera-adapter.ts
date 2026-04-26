@@ -57,6 +57,7 @@ export interface CameraAdapter {
     identity: CameraIdentity;
     ports: ReolinkNetPort;
     ability: ReolinkAbility;
+    audioNum?: number;
   }): CapabilitySnapshot;
   resolveLiveStreams(
     config: CameraConfig,

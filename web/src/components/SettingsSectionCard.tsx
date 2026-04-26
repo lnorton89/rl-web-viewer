@@ -1,4 +1,7 @@
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+
+import { Accordion, AccordionDetails, AccordionSummary, Alert, Button, Dialog, DialogActions, DialogContent, DialogTitle, Typography } from "@mui/material";
+import { ExpandMore } from "@mui/icons-material";
 
 import type { SettingsFieldPrimitive, SettingsFieldSpec } from "../../../src/types/settings.js";
 import type { SettingsFieldView, UseSettingsSection } from "../hooks/use-settings.js";
@@ -12,14 +15,27 @@ export function SettingsSectionCard({ section }: SettingsSectionCardProps) {
   const sectionHeadingRef = useRef<HTMLHeadingElement | null>(null);
   const statusRegionRef = useRef<HTMLDivElement | null>(null);
   const previousModeRef = useRef(section.mode);
+  const [expanded, setExpanded] = useState(true);
   const titleId = `settings-section-heading-${section.id}`;
+
+  const handleExpandedChange = useCallback(
+    (_event: React.SyntheticEvent, isExpanded: boolean) => {
+      setExpanded(isExpanded);
+    },
+    [],
+  );
+
+  useEffect(() => {
+    if (section.mode === "editing" || section.mode === "review" || section.mode === "applying") {
+      setExpanded(true);
+    }
+  }, [section.mode]);
 
   useEffect(() => {
     if (
       previousModeRef.current === "applying" &&
       (section.mode === "verified" || section.mode === "error")
     ) {
-      // Focus the status region after apply so the result is announced immediately.
       const focusTarget = statusRegionRef.current ?? sectionHeadingRef.current;
       focusTarget?.focus();
     }
@@ -28,139 +44,135 @@ export function SettingsSectionCard({ section }: SettingsSectionCardProps) {
   }, [section.mode]);
 
   return (
-    <section
-      aria-labelledby={titleId}
-      className="settings-section-card"
+    <Accordion
+      expanded={expanded}
+      onChange={handleExpandedChange}
       data-mode={section.mode}
       data-testid={`settings-section-${section.id}`}
     >
-      <div className="section-heading">
-        <p className="support-label">
-          {section.editable ? "Safe Settings" : "Inspect Only"}
-        </p>
-        <h2 id={titleId} ref={sectionHeadingRef} tabIndex={-1}>
+      <AccordionSummary expandIcon={<ExpandMore />}>
+        <Typography component="h2" id={titleId} ref={sectionHeadingRef} tabIndex={-1} sx={{ width: "100%", flexShrink: 0 }}>
+          <span className="support-label" style={{ display: "block" }}>
+            {section.editable ? "Safe Settings" : "Inspect Only"}
+          </span>
           {section.title}
-        </h2>
-      </div>
-
-      <div className="settings-section-meta">
+        </Typography>
+      </AccordionSummary>
+      <AccordionDetails>
         <p className="diagnostics-copy">{section.description}</p>
         <span className="settings-section-badge">{section.badgeLabel}</span>
-      </div>
 
-      <div
-        className="settings-section-status-region"
-        ref={statusRegionRef}
-        tabIndex={-1}
-        {...section.statusProps}
-      >
-        {section.mode === "review" ? (
-          <SettingsReviewCallout
-            rows={section.reviewRows}
-            showStreamWarning={section.id === "stream"}
-            variant="review"
-          />
-        ) : null}
-
-        {section.mode === "verified" && section.verifiedSummary ? (
-          <SettingsReviewCallout
-            noCameraChangeDetected={section.verifiedSummary.noCameraChangeDetected}
-            rows={section.verifiedSummary.rows}
-            variant="verified"
-          />
-        ) : null}
-
-        {section.mode === "error" && section.sectionError ? (
-          <div className="settings-section-error-panel">
-            <p>{section.sectionError}</p>
-          </div>
-        ) : null}
-      </div>
-
-      <div className="settings-fields">
-        {section.fieldViews.map((field) =>
-          shouldRenderEditableControl(section, field.fieldSpec) ? (
-            <EditableField
-              field={field}
-              key={field.fieldSpec.fieldPath}
-              onChange={(value) => {
-                section.updateDraft(field.fieldSpec.fieldPath, value);
-              }}
-              readOnly={section.mode === "review" || section.mode === "applying"}
+        <div
+          className="settings-section-status-region"
+          ref={statusRegionRef}
+          tabIndex={-1}
+          {...section.statusProps}
+        >
+          {section.mode === "review" ? (
+            <SettingsReviewCallout
+              rows={section.reviewRows}
+              showStreamWarning={section.id === "stream"}
+              variant="review"
             />
-          ) : (
-            <ReadOnlyField field={field} key={field.fieldSpec.fieldPath} />
-          ),
-        )}
-      </div>
+          ) : null}
 
-      <div className="settings-section-actions">
-        {section.editable ? (
-          <>
-            {section.mode === "read" || section.mode === "verified" ? (
-              <button
-                className="settings-action-button settings-action-button-accent"
-                type="button"
-                onClick={() => {
-                  void section.startEditing();
+          {section.mode === "verified" && section.verifiedSummary ? (
+            <SettingsReviewCallout
+              noCameraChangeDetected={section.verifiedSummary.noCameraChangeDetected}
+              rows={section.verifiedSummary.rows}
+              variant="verified"
+            />
+          ) : null}
+
+          {section.mode === "error" && section.sectionError ? (
+            <div className="settings-section-error-panel">
+              <p>{section.sectionError}</p>
+            </div>
+          ) : null}
+        </div>
+
+        <div className="settings-fields">
+          {section.fieldViews.map((field) =>
+            shouldRenderEditableControl(section, field.fieldSpec) ? (
+              <EditableField
+                field={field}
+                key={field.fieldSpec.fieldPath}
+                onChange={(value) => {
+                  section.updateDraft(field.fieldSpec.fieldPath, value);
                 }}
-              >
-                {section.mode === "verified" ? "Edit Again" : "Edit"}
-              </button>
-            ) : null}
+                readOnly={section.mode === "review" || section.mode === "applying"}
+              />
+            ) : (
+              <ReadOnlyField field={field} key={field.fieldSpec.fieldPath} />
+            ),
+          )}
+        </div>
 
-            {section.mode === "editing" || section.mode === "error" ? (
-              <>
-                <button
-                  className="settings-action-button"
-                  type="button"
-                  onClick={() => {
-                    section.cancelEditing();
-                  }}
-                >
-                  Cancel
-                </button>
-                <button
-                  className="settings-action-button settings-action-button-accent"
-                  disabled={!section.canReview}
-                  type="button"
-                  onClick={() => {
-                    section.enterReview();
-                  }}
-                >
-                  {section.mode === "error" ? "Fix and Review Again" : "Review Changes"}
-                </button>
-              </>
-            ) : null}
-
-            {section.mode === "review" ? (
-              <>
-                <button
-                  className="settings-action-button"
-                  type="button"
-                  onClick={() => {
-                    section.returnToEditing();
-                  }}
-                >
-                  Back to Editing
-                </button>
+        <div className="settings-section-actions">
+          {section.editable ? (
+            <>
+              {section.mode === "read" || section.mode === "verified" ? (
                 <button
                   className="settings-action-button settings-action-button-accent"
                   type="button"
                   onClick={() => {
-                    void section.apply();
+                    void section.startEditing();
                   }}
                 >
-                  Apply Settings
+                  {section.mode === "verified" ? "Edit Again" : "Edit"}
                 </button>
-              </>
-            ) : null}
-          </>
-        ) : (
-          <span className="settings-read-only-copy">Read only</span>
-        )}
-      </div>
-    </section>
+              ) : null}
+
+              {section.mode === "editing" || section.mode === "error" ? (
+                <>
+                  <button
+                    className="settings-action-button"
+                    type="button"
+                    onClick={() => {
+                      section.cancelEditing();
+                    }}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    className="settings-action-button settings-action-button-accent"
+                    disabled={!section.canReview}
+                    type="button"
+                    onClick={() => {
+                      section.enterReview();
+                    }}
+                  >
+                    {section.mode === "error" ? "Fix and Review Again" : "Review Changes"}
+                  </button>
+                </>
+              ) : null}
+
+              {section.mode === "review" ? (
+                <>
+                  <button
+                    className="settings-action-button"
+                    type="button"
+                    onClick={() => {
+                      section.returnToEditing();
+                    }}
+                  >
+                    Back to Editing
+                  </button>
+                  <NetworkApplyButton
+                    sectionId={section.id}
+                    onApply={() => {
+                      void section.apply();
+                    }}
+                  />
+                </>
+              ) : null}
+            </>
+          ) : (
+            <span className="settings-read-only-copy">Read only</span>
+          )}
+        </div>
+      </AccordionDetails>
+    </Accordion>
   );
 }
 
@@ -329,4 +341,78 @@ function formatValue(value: SettingsFieldPrimitive): string {
   }
 
   return value == null ? "Not available" : String(value);
+}
+
+function NetworkApplyButton({
+  sectionId,
+  onApply,
+}: {
+  sectionId: string;
+  onApply: () => void;
+}) {
+  const [showConfirm, setShowConfirm] = useState(false);
+
+  if (sectionId !== "network") {
+    return (
+      <button
+        className="settings-action-button settings-action-button-accent"
+        type="button"
+        onClick={onApply}
+      >
+        Apply Settings
+      </button>
+    );
+  }
+
+  return (
+    <>
+      <button
+        className="settings-action-button settings-action-button-accent"
+        type="button"
+        onClick={() => {
+          setShowConfirm(true);
+        }}
+      >
+        Apply Settings
+      </button>
+      <Dialog
+        open={showConfirm}
+        onClose={() => {
+          setShowConfirm(false);
+        }}
+        aria-labelledby="network-confirm-dialog-title"
+      >
+        <DialogTitle id="network-confirm-dialog-title">
+          Confirm Network Settings Change
+        </DialogTitle>
+        <DialogContent>
+          <Alert severity="warning" sx={{ mb: 2 }}>
+            Changing network settings may disconnect the camera from the network.
+            Ensure you have an alternative way to access the camera if the new
+            settings do not work.
+          </Alert>
+          <p>Are you sure you want to apply these network changes?</p>
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={() => {
+              setShowConfirm(false);
+            }}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={() => {
+              setShowConfirm(false);
+              onApply();
+            }}
+            variant="contained"
+            color="warning"
+          >
+            Apply Changes
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </>
+  );
 }

@@ -43,7 +43,7 @@ function loadStoredMuted(): boolean {
   } catch {
     // localStorage not available
   }
-  return false;
+  return true;
 }
 
 function saveVolume(volume: number): void {

@@ -60,12 +60,14 @@ describe("capability snapshot", () => {
       },
       ports,
       ability,
+      audioNum: devInfo.audioNum,
     });
 
     expect(snapshot.supportsLiveView).toBe(true);
     expect(snapshot.supportsPtzControl).toBe(true);
     expect(snapshot.supportsPtzPreset).toBe(true);
     expect(snapshot.supportsPtzPatrol).toBe(true);
+    expect(snapshot.supportsAudio).toBe(true);
   });
 
   it("persists a capability snapshot to disk", async () => {

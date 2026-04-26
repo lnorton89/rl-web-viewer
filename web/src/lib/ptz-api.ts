@@ -77,8 +77,8 @@ export async function fetchPtzAdvanced(
 export async function setFocus(
   focus: number,
   signal?: AbortSignal,
-): Promise<{ focus: number }> {
-  return requestJson<{ focus: number }>(`${PTZ_ENDPOINT}/focus`, {
+): Promise<{ focusValue: number }> {
+  return requestJson<{ focusValue: number }>(`${PTZ_ENDPOINT}/focus`, {
     method: "POST",
     body: { focus },
     signal,
@@ -88,8 +88,8 @@ export async function setFocus(
 export async function setIris(
   iris: number,
   signal?: AbortSignal,
-): Promise<{ iris: number }> {
-  return requestJson<{ iris: number }>(`${PTZ_ENDPOINT}/iris`, {
+): Promise<{ irisValue: number }> {
+  return requestJson<{ irisValue: number }>(`${PTZ_ENDPOINT}/iris`, {
     method: "POST",
     body: { iris },
     signal,
@@ -99,8 +99,8 @@ export async function setIris(
 export async function setSpeed(
   speed: number,
   signal?: AbortSignal,
-): Promise<{ speed: number }> {
-  return requestJson<{ speed: number }>(`${PTZ_ENDPOINT}/speed`, {
+): Promise<{ speedValue: number }> {
+  return requestJson<{ speedValue: number }>(`${PTZ_ENDPOINT}/speed`, {
     method: "POST",
     body: { speed },
     signal,

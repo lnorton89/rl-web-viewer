@@ -95,7 +95,7 @@ describe("settings routes", () => {
 
     expect(invalidParam.statusCode).toBe(400);
     expect(invalidParam.json<{ error: string }>()).toEqual({
-      error: "sectionId must be one of time, osd, image, stream, isp",
+      error: "sectionId must be one of time, osd, image, stream, isp, network",
     });
 
     expect(malformedBody.statusCode).toBe(400);
@@ -227,6 +227,86 @@ describe("settings routes", () => {
     expect(applySection).toHaveBeenCalledWith("image", {
       contrast: 140,
     });
+  });
+
+  it("network section is included in bootstrap as editable", async () => {
+    const { service } = createSettingsService();
+    const app = await createApp(service);
+
+    const response = await app.inject({
+      method: "GET",
+      url: "/api/settings",
+    });
+
+    const bootstrap = response.json<SettingsBootstrap>();
+    const networkSection = bootstrap.sections.find((s) => s.id === "network");
+
+    expect(networkSection).toBeDefined();
+    expect(networkSection?.editable).toBe(true);
+    expect(networkSection?.status).toBe("editable");
+    expect(networkSection?.fieldSpecs.some((f) => f.fieldPath === "network.ip")).toBe(true);
+    expect(networkSection?.fieldSpecs.some((f) => f.fieldPath === "network.subnet")).toBe(true);
+    expect(networkSection?.fieldSpecs.some((f) => f.fieldPath === "network.gateway")).toBe(true);
+    expect(networkSection?.fieldSpecs.some((f) => f.fieldPath === "network.mac")).toBe(true);
+    expect(networkSection?.fieldSpecs.some((f) => f.fieldPath === "network.dns")).toBe(true);
+  });
+
+  it("applies network settings and returns success", async () => {
+    const networkBefore = createSectionValues().network;
+    const networkAfter = { ...networkBefore, ip: "192.168.1.200" };
+    const applyResult = {
+      ok: true as const,
+      sectionId: "network" as const,
+      verified: true as const,
+      before: networkBefore,
+      after: networkAfter,
+      changedFields: [
+        {
+          fieldPath: "network.ip",
+          label: "IP Address",
+          beforeValue: "192.168.1.100",
+          afterValue: "192.168.1.200",
+          verified: true,
+        },
+      ],
+    };
+    const { service, applySection } = createSettingsService({
+      applyResult,
+    });
+    const app = await createApp(service);
+
+    const response = await app.inject({
+      method: "POST",
+      url: "/api/settings/network/apply",
+      payload: {
+        ip: "192.168.1.200",
+      },
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual(applyResult);
+    expect(applySection).toHaveBeenCalledWith("network", {
+      ip: "192.168.1.200",
+    });
+  });
+
+  it("returns 422 when network validation fails for empty draft", async () => {
+    const { service, applySection } = createSettingsService();
+    const app = await createApp(service);
+
+    const response = await app.inject({
+      method: "POST",
+      url: "/api/settings/network/apply",
+      payload: {},
+    });
+
+    expect(response.statusCode).toBe(422);
+    expect(response.json()).toMatchObject({
+      ok: false,
+      sectionId: "network",
+      code: "validation",
+    });
+    expect(applySection).not.toHaveBeenCalled();
   });
 
   it("mounts settings routes through createServer and preserves /api/live-view and /api/ptz", async () => {
@@ -540,6 +620,13 @@ function createSectionValues(): SettingsSectionValueMap {
       antiFlicker: "60Hz",
       exposureMode: "Auto",
       nr3d: 0,
+    },
+    network: {
+      ip: "192.168.1.100",
+      subnet: "255.255.255.0",
+      gateway: "192.168.1.1",
+      mac: "AA:BB:CC:DD:EE:FF",
+      dns: "8.8.8.8",
     },
   };
 }

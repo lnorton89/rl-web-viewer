@@ -15,9 +15,14 @@ import {
 } from "@mui/icons-material";
 import { PtzPresetGrid } from "./PtzPresetGrid.js";
 import { AudioPanel } from "./AudioPanel.js";
+import type { AudioControlsState } from "../hooks/use-audio-controls.js";
 import { usePtzControls } from "../hooks/use-ptz-controls.js";
 
-export function PtzPanel() {
+type PtzPanelProps = {
+  audioControls: AudioControlsState;
+};
+
+export function PtzPanel({ audioControls }: PtzPanelProps) {
   const {
     activeDirection,
     busyAction,
@@ -57,12 +62,6 @@ export function PtzPanel() {
       data-testid="ptz-panel"
     >
       <Box sx={{ mb: 1.5 }}>
-        <Typography
-          variant="overline"
-          sx={{ color: "text.secondary", display: "block" }}
-        >
-          Camera Control
-        </Typography>
         <Typography variant="h6" id="ptz-panel-heading">
           PTZ Control
         </Typography>
@@ -220,7 +219,7 @@ export function PtzPanel() {
               <span>
                 <IconButton
                   onClick={() => void pulseZoom("in")}
-                  disabled={isBusy}
+                  disabled={motionDisabled}
                   size="small"
                 >
                   <ZoomIn />
@@ -231,7 +230,7 @@ export function PtzPanel() {
               <span>
                 <IconButton
                   onClick={() => void pulseZoom("out")}
-                  disabled={isBusy}
+                  disabled={motionDisabled}
                   size="small"
                 >
                   <ZoomOut />
@@ -332,7 +331,7 @@ export function PtzPanel() {
             />
           ) : null}
 
-          <AudioPanel />
+          <AudioPanel controls={audioControls} />
         </Box>
       )}
     </Paper>

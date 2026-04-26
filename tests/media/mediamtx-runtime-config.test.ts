@@ -81,5 +81,6 @@ function createSnapshot(): CapabilitySnapshot {
     supportsPtzPatrol: true,
     supportsSnapshot: true,
     supportsConfigRead: true,
+    supportsAudio: true,
   };
 }

@@ -19,7 +19,6 @@ export function attachHlsPlayer(
   let hls: Hls | null = null;
 
   video.autoplay = true;
-  video.muted = true;
   video.playsInline = true;
 
   const ready = new Promise<void>((resolve, reject) => {

@@ -436,8 +436,8 @@ export function usePtzControls(): UsePtzControlsResult {
 
       try {
         const result = await setFocus(value);
-        setFocusValue(result.focus);
-        setTransientStatus(`Focus set to ${result.focus}`);
+        setFocusValue(result.focusValue);
+        setTransientStatus(`Focus set to ${result.focusValue}`);
       } catch (error: unknown) {
         setStatusText(COMMAND_FAILURE_COPY);
         setErrorText(getErrorMessage(error, COMMAND_FAILURE_COPY));
@@ -454,8 +454,8 @@ export function usePtzControls(): UsePtzControlsResult {
 
       try {
         const result = await setIris(value);
-        setIrisValue(result.iris);
-        setTransientStatus(`Iris set to ${result.iris}`);
+        setIrisValue(result.irisValue);
+        setTransientStatus(`Iris set to ${result.irisValue}`);
       } catch (error: unknown) {
         setStatusText(COMMAND_FAILURE_COPY);
         setErrorText(getErrorMessage(error, COMMAND_FAILURE_COPY));
@@ -472,8 +472,8 @@ export function usePtzControls(): UsePtzControlsResult {
 
       try {
         const result = await setSpeed(value);
-        setSpeedValue(result.speed);
-        setTransientStatus(`Speed set to ${result.speed}`);
+        setSpeedValue(result.speedValue);
+        setTransientStatus(`Speed set to ${result.speedValue}`);
       } catch (error: unknown) {
         setStatusText(COMMAND_FAILURE_COPY);
         setErrorText(getErrorMessage(error, COMMAND_FAILURE_COPY));

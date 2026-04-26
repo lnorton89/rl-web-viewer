@@ -35,6 +35,7 @@ export function useLiveView(): {
   nextFallbackModeId: LiveModeId | null;
   renderKind: "video" | "image";
   activePlayback: LiveViewPlayback | null;
+  videoElement: HTMLVideoElement | null;
   bindVideoElement(node: HTMLVideoElement | null): void;
   bindImageElement(node: HTMLImageElement | null): void;
   selectMode(modeId: LiveModeId): Promise<void>;
@@ -329,6 +330,7 @@ export function useLiveView(): {
     nextFallbackModeId,
     renderKind,
     activePlayback,
+    videoElement,
     bindVideoElement,
     bindImageElement,
     selectMode,

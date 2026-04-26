@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import type { CapabilitySnapshot } from "../../src/camera/capability-snapshot.js";
 import {
+  AUDIO_PREFERRED_MODE_ORDER,
   DEFAULT_MODE_ORDER,
   buildFallbackOrder,
   buildLiveModes,
@@ -18,13 +19,21 @@ describe("live-view modes", () => {
       "hls:sub",
       "snapshot:main",
     ]);
-    expect(buildFallbackOrder(modes)).toEqual([
+    expect(AUDIO_PREFERRED_MODE_ORDER).toEqual([
+      "hls:main",
       "webrtc:main",
       "webrtc:sub",
       "hls:sub",
       "snapshot:main",
     ]);
-    expect(pickPreferredMode(modes)?.id).toBe("webrtc:main");
+    expect(buildFallbackOrder(modes)).toEqual([
+      "hls:main",
+      "webrtc:main",
+      "webrtc:sub",
+      "hls:sub",
+      "snapshot:main",
+    ]);
+    expect(pickPreferredMode(modes)?.id).toBe("hls:main");
     expect(modes.find((mode) => mode.id === "hls:main")?.enabled).toBe(true);
     expect(modes.find((mode) => mode.id === "snapshot:sub")?.enabled).toBe(true);
   });
@@ -37,6 +46,7 @@ describe("live-view modes", () => {
     );
 
     expect(buildFallbackOrder(modes)).toEqual([
+      "hls:main",
       "webrtc:main",
       "webrtc:sub",
       "hls:sub",
@@ -56,6 +66,20 @@ describe("live-view modes", () => {
     expect(pickPreferredMode(modes)?.id).toBe("snapshot:main");
     expect(modes.find((mode) => mode.id === "webrtc:main")?.enabled).toBe(false);
     expect(modes.find((mode) => mode.id === "hls:sub")?.enabled).toBe(false);
+  });
+
+  it("keeps the legacy startup order when hls main is unavailable", () => {
+    const modes = buildLiveModes(createSnapshot()).map((mode) =>
+      mode.id === "hls:main" ? { ...mode, enabled: false } : mode,
+    );
+
+    expect(buildFallbackOrder(modes)).toEqual([
+      "webrtc:main",
+      "webrtc:sub",
+      "hls:sub",
+      "snapshot:main",
+    ]);
+    expect(pickPreferredMode(modes)?.id).toBe("webrtc:main");
   });
 });
 
@@ -81,6 +105,7 @@ function createSnapshot(
     supportsPtzPatrol: true,
     supportsSnapshot: true,
     supportsConfigRead: true,
+    supportsAudio: true,
     ...overrides,
   };
 }

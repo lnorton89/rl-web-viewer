@@ -18,6 +18,7 @@ export function attachWebRtcPlayer(
   let destroyed = false;
   let settled = false;
   let reader: MediaMTXWebRTCReader | null = null;
+  let mediaStream: MediaStream | null = null;
 
   const ready = new Promise<void>((resolve, reject) => {
     const fail = (error: unknown) => {
@@ -45,10 +46,26 @@ export function attachWebRtcPlayer(
         }
 
         video.autoplay = true;
-        video.muted = true;
         video.playsInline = true;
-        video.srcObject =
-          event.streams[0] ?? new MediaStream(event.track ? [event.track] : []);
+
+        const nextStream =
+          event.streams[0] ??
+          mediaStream ??
+          new MediaStream(event.track ? [event.track] : []);
+
+        if (
+          event.track &&
+          !nextStream.getTracks().some((track) => track.id === event.track.id)
+        ) {
+          nextStream.addTrack(event.track);
+        }
+
+        mediaStream = nextStream;
+
+        if (video.srcObject !== nextStream) {
+          video.srcObject = nextStream;
+        }
+
         void video.play().catch(() => {});
 
         if (!settled) {
@@ -66,6 +83,7 @@ export function attachWebRtcPlayer(
     destroy() {
       destroyed = true;
       reader?.close();
+      mediaStream = null;
       video.pause();
       video.srcObject = null;
       video.removeAttribute("src");

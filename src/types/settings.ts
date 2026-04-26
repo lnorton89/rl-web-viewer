@@ -4,6 +4,7 @@ export const SETTINGS_SECTION_IDS = [
   "image",
   "stream",
   "isp",
+  "network",
 ] as const;
 
 export type SettingsSectionId = (typeof SETTINGS_SECTION_IDS)[number];
@@ -13,6 +14,7 @@ export const EDITABLE_SETTINGS_SECTION_IDS = [
   "osd",
   "image",
   "stream",
+  "network",
 ] as const;
 
 export type EditableSettingsSectionId =
@@ -155,12 +157,21 @@ export type IspSettingsValue = {
   nr3d: number;
 };
 
+export type NetworkSettingsValue = {
+  ip: string;
+  subnet: string;
+  gateway: string;
+  mac: string;
+  dns: string;
+};
+
 export type SettingsSectionValueMap = {
   time: TimeSettingsValue;
   osd: OsdSettingsValue;
   image: ImageSettingsValue;
   stream: StreamSettingsValue;
   isp: IspSettingsValue;
+  network: NetworkSettingsValue;
 };
 
 export type TimeSettingsDraft = {
@@ -180,12 +191,15 @@ export type StreamSettingsDraft = {
   subStream?: Partial<StreamProfileValue>;
 };
 
+export type NetworkSettingsDraft = Partial<NetworkSettingsValue>;
+
 export type SettingsSectionDraftMap = {
   time: TimeSettingsDraft;
   osd: OsdSettingsDraft;
   image: ImageSettingsDraft;
   stream: StreamSettingsDraft;
   isp: never;
+  network: NetworkSettingsDraft;
 };
 
 export type SettingsSection<TId extends SettingsSectionId = SettingsSectionId> = {
@@ -256,6 +270,7 @@ export const SETTINGS_WRITE_STRATEGIES = {
   image: "full-object",
   stream: "full-object",
   isp: "read-only",
+  network: "full-object",
 } as const satisfies Record<SettingsSectionId, SettingsWriteStrategy>;
 
 export const SETTINGS_SECTION_META = {
@@ -278,6 +293,10 @@ export const SETTINGS_SECTION_META = {
   isp: {
     title: "Camera Tuning",
     description: "Firmware-specific ISP values exposed for inspection only.",
+  },
+  network: {
+    title: "Network Settings",
+    description: "IP address, subnet mask, gateway, MAC address, and DNS.",
   },
 } as const satisfies Record<
   SettingsSectionId,
@@ -743,6 +762,58 @@ export const SETTINGS_FIELD_SPECS = {
     label: "3D Noise Reduction",
     editable: false,
     defaultValue: 0,
+  }),
+  "network.ip": createFieldSpec({
+    sectionId: "network",
+    fieldPath: "network.ip",
+    kind: "text",
+    label: "IP Address",
+    defaultValue: "",
+    constraints: {
+      minLength: 7,
+      maxLength: 15,
+    },
+  }),
+  "network.subnet": createFieldSpec({
+    sectionId: "network",
+    fieldPath: "network.subnet",
+    kind: "text",
+    label: "Subnet Mask",
+    defaultValue: "",
+    constraints: {
+      minLength: 7,
+      maxLength: 15,
+    },
+  }),
+  "network.gateway": createFieldSpec({
+    sectionId: "network",
+    fieldPath: "network.gateway",
+    kind: "text",
+    label: "Gateway",
+    defaultValue: "",
+    constraints: {
+      minLength: 7,
+      maxLength: 15,
+    },
+  }),
+  "network.mac": createFieldSpec({
+    sectionId: "network",
+    fieldPath: "network.mac",
+    kind: "read-only",
+    label: "MAC Address",
+    editable: false,
+    defaultValue: "",
+  }),
+  "network.dns": createFieldSpec({
+    sectionId: "network",
+    fieldPath: "network.dns",
+    kind: "text",
+    label: "DNS Server",
+    defaultValue: "",
+    constraints: {
+      minLength: 7,
+      maxLength: 15,
+    },
   }),
 } as const satisfies Record<string, SettingsFieldSpec>;
 

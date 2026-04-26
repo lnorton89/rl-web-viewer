@@ -24,6 +24,7 @@ export type CapabilitySnapshot = {
   supportsPtzPatrol: boolean;
   supportsSnapshot: boolean;
   supportsConfigRead: boolean;
+  supportsAudio: boolean;
 };
 
 const capabilitySnapshotSchema = z.object({
@@ -45,12 +46,14 @@ const capabilitySnapshotSchema = z.object({
   supportsPtzPatrol: z.boolean(),
   supportsSnapshot: z.boolean(),
   supportsConfigRead: z.boolean(),
+  supportsAudio: z.boolean().default(false),
 });
 
 export function buildCapabilitySnapshot(input: {
   identity: CameraIdentity;
   ports: ReolinkNetPort;
   ability: ReolinkAbility;
+  audioNum?: number;
 }): CapabilitySnapshot {
   return {
     identity: input.identity,
@@ -70,6 +73,7 @@ export function buildCapabilitySnapshot(input: {
       hasRootPermit(input.ability, "exportCfg") ||
       hasRootPermit(input.ability, "devInfo") ||
       hasRootPermit(input.ability, "user"),
+    supportsAudio: (input.audioNum ?? 0) > 0,
   };
 }
 

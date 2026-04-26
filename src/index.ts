@@ -1,6 +1,6 @@
 import { pathToFileURL } from "node:url";
 
-import { buildCapabilitySnapshot, saveCapabilitySnapshot } from "./camera/capability-snapshot.js";
+import { buildCapabilitySnapshot, loadCapabilitySnapshot, saveCapabilitySnapshot } from "./camera/capability-snapshot.js";
 import { probeCamera } from "./camera/reolink-discovery.js";
 import { ReolinkSession } from "./camera/reolink-session.js";
 import { loadCameraConfig } from "./config/camera-config.js";
@@ -17,6 +17,7 @@ export async function probe(args = process.argv.slice(2)): Promise<void> {
     identity: probeResult.identity,
     ports: probeResult.ports,
     ability: probeResult.ability,
+    audioNum: probeResult.devInfo.audioNum,
   });
   const snapshotPath = await saveCapabilitySnapshot(snapshot, {
     ...config,
@@ -49,6 +50,7 @@ export async function probe(args = process.argv.slice(2)): Promise<void> {
     `supportsLiveView: ${snapshot.supportsLiveView}`,
     `supportsPtzControl: ${snapshot.supportsPtzControl}`,
     `supportsPtzPreset: ${snapshot.supportsPtzPreset}`,
+    `supportsAudio: ${snapshot.supportsAudio}`,
     `snapshotPath: ${snapshotPath}`,
   ];
 
@@ -62,8 +64,21 @@ export async function probe(args = process.argv.slice(2)): Promise<void> {
 export async function startServer(): Promise<void> {
   const port = Number(process.env.PORT ?? 4000);
 
+  let audioSupported = false;
+  try {
+    const config = await loadCameraConfig();
+    const snapshot = await loadCapabilitySnapshot(config);
+    audioSupported = snapshot.supportsAudio;
+  } catch {
+    // Capability snapshot not yet available; audio defaults to off.
+  }
+
   await startMediaRelay();
-  const app = await createServer();
+  const app = await createServer({
+    audio: {
+      getAudioCapability: async () => audioSupported,
+    },
+  });
   await app.listen({
     host: "127.0.0.1",
     port,

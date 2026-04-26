@@ -2,7 +2,7 @@ import { Paper } from "@mui/material";
 import { useSettings } from "../hooks/use-settings.js";
 import { SettingsSectionCard } from "./SettingsSectionCard.js";
 
-const SECTION_ORDER = ["time", "osd", "image", "stream", "isp"] as const;
+const SECTION_ORDER = ["time", "osd", "image", "stream", "isp", "network"] as const;
 
 export function SettingsPanel() {
   const { isLoading, loadError, sections } = useSettings();

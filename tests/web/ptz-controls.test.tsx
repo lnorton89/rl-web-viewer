@@ -185,7 +185,6 @@ describe("ptz controls", () => {
       expect(screen.getByTestId("ptz-panel")).not.toBeNull();
     });
 
-    expect(screen.getByText("Camera Control")).not.toBeNull();
     expect(screen.getByText("PTZ Control")).not.toBeNull();
   });
 

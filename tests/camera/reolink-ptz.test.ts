@@ -47,6 +47,7 @@ const snapshot: CapabilitySnapshot = {
   supportsPtzPatrol: true,
   supportsSnapshot: true,
   supportsConfigRead: true,
+  supportsAudio: true,
 };
 
 describe("reolink ptz service", () => {

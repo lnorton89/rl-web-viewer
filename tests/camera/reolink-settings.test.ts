@@ -48,6 +48,7 @@ const snapshot: CapabilitySnapshot = {
   supportsPtzPatrol: true,
   supportsSnapshot: true,
   supportsConfigRead: true,
+  supportsAudio: true,
 };
 
 describe("reolink settings bootstrap contract", () => {
@@ -58,12 +59,14 @@ describe("reolink settings bootstrap contract", () => {
       "image",
       "stream",
       "isp",
+      "network",
     ]);
     expect(EDITABLE_SETTINGS_SECTION_IDS).toEqual([
       "time",
       "osd",
       "image",
       "stream",
+      "network",
     ]);
     expect(READ_ONLY_SETTINGS_SECTION_IDS).toEqual(["isp"]);
   });
@@ -173,6 +176,7 @@ describe("reolink settings service bootstrap", () => {
       "image",
       "stream",
       "isp",
+      "network",
     ]);
     expect(bootstrap.sections.map((section) => section.status)).toEqual([
       "editable",
@@ -180,6 +184,7 @@ describe("reolink settings service bootstrap", () => {
       "editable",
       "editable",
       "read-only",
+      "editable",
     ]);
     expect(
       bootstrap.sections.find((section) => section.id === "image")?.fieldSpecs[0]

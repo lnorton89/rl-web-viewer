@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useLayoutEffect, useState } from "react";
 import { LayoutShell } from "./components/LayoutShell.js";
 import { LiveViewerFrame } from "./components/LiveViewerFrame.js";
 import { SettingsPanel } from "./components/SettingsPanel.js";
@@ -6,6 +6,7 @@ import { ModeSwitcher } from "./components/ModeSwitcher.js";
 import { DiagnosticsDisclosure } from "./components/DiagnosticsDisclosure.js";
 import { PtzPanel } from "./components/PtzPanel.js";
 import { useLiveView } from "./hooks/use-live-view.js";
+import { useAudioControls } from "./hooks/use-audio-controls.js";
 import { Box, Typography } from "@mui/material";
 
 const PTZ_SIDEBAR_WIDTH = 280;
@@ -24,7 +25,16 @@ export default function App() {
     retry,
     selectMode,
     state,
+    videoElement,
   } = useLiveView();
+
+  const audio = useAudioControls();
+
+  useLayoutEffect(() => {
+    if (videoElement) {
+      audio.applyToVideo(videoElement);
+    }
+  }, [videoElement, audio.applyToVideo]);
 
   const currentMode = modes.find((mode) => mode.id === currentModeId) ?? null;
 
@@ -67,7 +77,7 @@ export default function App() {
                 overflow: "auto",
               }}
             >
-              <PtzPanel />
+              <PtzPanel audioControls={audio} />
             </Box>
           </Box>
         );

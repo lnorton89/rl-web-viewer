@@ -66,6 +66,14 @@ export const DEFAULT_MODE_ORDER: LiveModeId[] = [
   "snapshot:main",
 ];
 
+export const AUDIO_PREFERRED_MODE_ORDER: LiveModeId[] = [
+  "hls:main",
+  "webrtc:main",
+  "webrtc:sub",
+  "hls:sub",
+  "snapshot:main",
+];
+
 export function buildLiveModes(snapshot: CapabilitySnapshot): LiveMode[] {
   const liveTransportEnabled =
     snapshot.supportsLiveView === true && snapshot.ports.rtsp > 0;
@@ -92,11 +100,14 @@ export function pickPreferredMode(modes: readonly LiveMode[]): LiveMode | null {
 }
 
 export function buildFallbackOrder(modes: readonly LiveMode[]): LiveModeId[] {
+  const modeOrder = modes.some((mode) => mode.id === "hls:main" && mode.enabled)
+    ? AUDIO_PREFERRED_MODE_ORDER
+    : DEFAULT_MODE_ORDER;
   const enabledModeIds = new Set(
     modes.filter((mode) => mode.enabled).map((mode) => mode.id),
   );
 
-  return DEFAULT_MODE_ORDER.filter((modeId) => enabledModeIds.has(modeId));
+  return modeOrder.filter((modeId) => enabledModeIds.has(modeId));
 }
 
 function isModeEnabled(

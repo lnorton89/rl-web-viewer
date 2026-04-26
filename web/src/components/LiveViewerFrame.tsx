@@ -46,7 +46,6 @@ export function LiveViewerFrame({
         ref={renderKind === "video" ? bindVideoElement : undefined}
         className="viewer-surface"
         autoPlay
-        muted
         playsInline
         hidden={renderKind !== "video"}
       />

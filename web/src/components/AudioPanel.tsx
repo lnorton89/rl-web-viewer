@@ -1,9 +1,13 @@
 import { Box, Divider, IconButton, Slider, Tooltip, Typography } from "@mui/material";
 import { VolumeUp, VolumeOff } from "@mui/icons-material";
-import { useAudioControls } from "../hooks/use-audio-controls.js";
+import type { AudioControlsState } from "../hooks/use-audio-controls.js";
 
-export function AudioPanel() {
-  const { hasAudio, isMuted, setMuted, setVolume, volume } = useAudioControls();
+type AudioPanelProps = {
+  controls: AudioControlsState;
+};
+
+export function AudioPanel({ controls }: AudioPanelProps) {
+  const { hasAudio, isMuted, setMuted, setVolume, volume } = controls;
 
   if (!hasAudio) {
     return null;

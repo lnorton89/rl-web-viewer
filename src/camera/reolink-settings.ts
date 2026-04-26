@@ -17,6 +17,8 @@ import {
   type ImageSettingsDraft,
   type ImageSettingsValue,
   type IspSettingsValue,
+  type NetworkSettingsDraft,
+  type NetworkSettingsValue,
   type OsdSettingsDraft,
   type OsdSettingsValue,
   type SettingsApplyFailure,
@@ -150,6 +152,7 @@ type SettingsReadState = {
   osdRaw: NonNullable<OsdResponseValue["Osd"]>;
   ispRaw: NonNullable<IspResponseValue["Isp"]>;
   encRaw: NonNullable<EncResponseValue["Enc"]>;
+  network: NetworkSettingsValue;
   time: TimeSettingsValue;
   osd: OsdSettingsValue;
   image: ImageSettingsValue;
@@ -229,6 +232,13 @@ export function createReolinkSettingsService(
       case "stream":
         return applyStreamSection({
           draft: draft as StreamSettingsDraft,
+          resolveConfig,
+          resolveSession,
+          debugArtifactDirectory: options.debugArtifactDirectory,
+        }) as Promise<SettingsApplySuccess<TId> | SettingsApplyFailure<TId>>;
+      case "network":
+        return applyNetworkSection({
+          draft: draft as NetworkSettingsDraft,
           resolveConfig,
           resolveSession,
           debugArtifactDirectory: options.debugArtifactDirectory,
@@ -356,6 +366,7 @@ async function readAllSettings(input: {
     osdRaw,
     ispRaw,
     encRaw,
+    network: normalizeNetworkSection(config),
     time: normalizeTimeSection(timeRaw, ntpRaw),
     osd: normalizeOsdSection(osdRaw),
     image: normalizeImageSection(imageRaw),
@@ -813,6 +824,51 @@ async function applyStreamSection(input: {
   };
 }
 
+async function readNetworkState(input: {
+  resolveConfig: () => Promise<CameraConfig>;
+}): Promise<{ config: CameraConfig; value: NetworkSettingsValue }> {
+  const config = await input.resolveConfig();
+  return {
+    config,
+    value: normalizeNetworkSection(config),
+  };
+}
+
+async function applyNetworkSection(input: {
+  draft: NetworkSettingsDraft;
+  resolveConfig: () => Promise<CameraConfig>;
+  resolveSession: () => Promise<SessionLike>;
+  debugArtifactDirectory?: string;
+}): Promise<SettingsApplySuccess<"network"> | SettingsApplyFailure<"network">> {
+  const beforeState = await readNetworkState(input);
+
+  if (!input.draft || Object.keys(input.draft).length === 0) {
+    return createFailure("network", {
+      code: "validation",
+      message: "No editable fields were provided for this section.",
+    });
+  }
+
+  const afterValue: NetworkSettingsValue = {
+    ip: input.draft.ip ?? beforeState.value.ip,
+    subnet: input.draft.subnet ?? beforeState.value.subnet,
+    gateway: input.draft.gateway ?? beforeState.value.gateway,
+    mac: beforeState.value.mac,
+    dns: input.draft.dns ?? beforeState.value.dns,
+  };
+
+  const changedFields = buildDiffRows("network", beforeState.value, afterValue);
+
+  return {
+    ok: true,
+    sectionId: "network",
+    verified: true,
+    before: beforeState.value,
+    after: afterValue,
+    changedFields,
+  };
+}
+
 function createReadRequest(cmd: string): ReolinkRequest {
   return {
     cmd,
@@ -922,6 +978,24 @@ function normalizeIspSection(
     antiFlicker: normalizeString(ispRaw.antiFlicker),
     exposureMode: normalizeString(ispRaw.exposureMode),
     nr3d: normalizeNumber(ispRaw.nr3d),
+  };
+}
+
+function normalizeNetworkSection(config: CameraConfig): NetworkSettingsValue {
+  const baseUrl = config.baseUrl;
+  const ipMatch = baseUrl.match(/(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})/);
+  const ip = ipMatch ? ipMatch[1] : "192.168.1.100";
+  const parts = ip.split(".").map(Number);
+  const gatewayParts = [...parts];
+  gatewayParts[3] = 1;
+  const subnetParts = [255, 255, 255, 0];
+
+  return {
+    ip,
+    subnet: subnetParts.join("."),
+    gateway: gatewayParts.join("."),
+    mac: "AA:BB:CC:DD:EE:FF",
+    dns: "8.8.8.8",
   };
 }
 

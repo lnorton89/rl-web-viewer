@@ -15,43 +15,104 @@ export function attachSnapshotPlayer(
   let destroyed = false;
   let settled = false;
   let refreshTimer: number | null = null;
+  let activeObjectUrl: string | null = null;
+  let pendingObjectUrl: string | null = null;
+  let activeRequest: AbortController | null = null;
+
+  const releaseObjectUrl = (objectUrl: string | null) => {
+    if (objectUrl !== null) {
+      URL.revokeObjectURL(objectUrl);
+    }
+  };
+
+  const handleLoad = () => {
+    if (pendingObjectUrl !== null) {
+      releaseObjectUrl(activeObjectUrl);
+      activeObjectUrl = pendingObjectUrl;
+      pendingObjectUrl = null;
+    }
+
+    if (!settled) {
+      settled = true;
+      resolveReady?.();
+    }
+  };
+
+  const handleError = () => {
+    failRequest(SNAPSHOT_FAILURE_MESSAGE);
+  };
+
+  let resolveReady: (() => void) | null = null;
+  let rejectReady: ((error: Error) => void) | null = null;
+
+  const failRequest = (error: unknown) => {
+    const reason = normalizePlayerError(error, SNAPSHOT_FAILURE_MESSAGE);
+
+    if (!settled) {
+      settled = true;
+      rejectReady?.(new Error(reason));
+    }
+
+    if (!destroyed) {
+      options.onError?.(reason);
+    }
+  };
 
   const ready = new Promise<void>((resolve, reject) => {
-    const fail = (error: unknown) => {
-      const reason = normalizePlayerError(error, SNAPSHOT_FAILURE_MESSAGE);
+    resolveReady = resolve;
+    rejectReady = reject;
 
-      if (!settled) {
-        settled = true;
-        reject(new Error(reason));
-      }
-
-      if (!destroyed) {
-        options.onError?.(reason);
-      }
-    };
-
-    const renderSnapshot = () => {
-      if (destroyed) {
+    const renderSnapshot = async () => {
+      if (destroyed || activeRequest !== null) {
         return;
       }
 
-      const url = new URL(snapshotUrl, window.location.href);
-      url.searchParams.set("_ts", Date.now().toString());
-      image.src = url.toString();
+      const request = new AbortController();
+      activeRequest = request;
+
+      try {
+        const response = await fetch(snapshotUrl, {
+          cache: "no-store",
+          signal: request.signal,
+        });
+
+        if (!response.ok) {
+          throw new Error(
+            `Snapshot request failed with HTTP ${response.status}`,
+          );
+        }
+
+        const objectUrl = URL.createObjectURL(await response.blob());
+
+        if (destroyed) {
+          releaseObjectUrl(objectUrl);
+          return;
+        }
+
+        releaseObjectUrl(pendingObjectUrl);
+        pendingObjectUrl = objectUrl;
+        image.src = objectUrl;
+      } catch (error: unknown) {
+        if (
+          error instanceof DOMException &&
+          error.name === "AbortError"
+        ) {
+          return;
+        }
+
+        failRequest(error);
+      } finally {
+        if (activeRequest === request) {
+          activeRequest = null;
+        }
+      }
     };
 
     image.decoding = "async";
-    image.addEventListener("load", () => {
-      if (!settled) {
-        settled = true;
-        resolve();
-      }
-    });
-    image.addEventListener("error", () => {
-      fail(SNAPSHOT_FAILURE_MESSAGE);
-    });
+    image.addEventListener("load", handleLoad);
+    image.addEventListener("error", handleError);
 
-    renderSnapshot();
+    void renderSnapshot();
     refreshTimer = window.setInterval(renderSnapshot, refreshMs);
   });
 
@@ -64,6 +125,14 @@ export function attachSnapshotPlayer(
         window.clearInterval(refreshTimer);
       }
 
+      activeRequest?.abort();
+      activeRequest = null;
+      image.removeEventListener("load", handleLoad);
+      image.removeEventListener("error", handleError);
+      releaseObjectUrl(pendingObjectUrl);
+      pendingObjectUrl = null;
+      releaseObjectUrl(activeObjectUrl);
+      activeObjectUrl = null;
       image.removeAttribute("src");
     },
   };
