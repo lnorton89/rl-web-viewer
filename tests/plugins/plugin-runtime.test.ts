@@ -96,7 +96,7 @@ describe("plugin runtime", () => {
     await expect(
       runtime.configurePlugin("youtube-streaming", {
         values: {
-          privacy: "public",
+          privacy: "friends-only",
         },
       }),
     ).rejects.toMatchObject({
