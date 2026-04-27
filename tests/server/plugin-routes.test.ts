@@ -178,7 +178,7 @@ describe("plugin routes", () => {
             },
           ],
           diagnostics: {
-            state: "ready",
+            state: "live",
             currentModeId: "snapshot:main",
             nextFallbackModeId: null,
             reason: null,
@@ -306,7 +306,7 @@ function createFakeRuntime(): PluginRuntime {
       };
     },
     async configurePlugin(_pluginId, patch) {
-      if (patch.values.privacy === "public") {
+      if (patch.values?.privacy === "public") {
         throw Object.assign(new Error("Privacy must be private or unlisted"), {
           code: "validation",
           statusCode: 422,
