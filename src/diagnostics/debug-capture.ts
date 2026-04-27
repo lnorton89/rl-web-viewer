@@ -85,6 +85,10 @@ function maskTokenLikeValue(value: unknown): unknown {
 
 function isSecretKey(keyLower: string): boolean {
   return (
+    keyLower === "authorization" ||
+    keyLower === "code" ||
+    keyLower === "authcode" ||
+    keyLower === "auth_code" ||
     keyLower.includes("password") ||
     keyLower.includes("secret") ||
     keyLower.includes("streamname") ||
@@ -100,6 +104,10 @@ function getDebugKey(key: string, keyLower: string): string {
     keyLower === "access_token" ||
     keyLower === "refresh_token" ||
     keyLower === "client_secret" ||
+    keyLower === "authorization" ||
+    keyLower === "code" ||
+    keyLower === "authcode" ||
+    keyLower === "auth_code" ||
     keyLower === "streamname" ||
     keyLower === "stream_name"
   ) {
@@ -115,6 +123,7 @@ function sanitizeStringForDebug(value: string): string {
   }
 
   return value
+    .replace(/Bearer\s+[A-Za-z0-9._~+/=-]+/gi, "Bearer [REDACTED]")
     .replace(/rtmps?:\/\/[^\s"']+/gi, "[REDACTED]")
     .replace(/rtsp:\/\/[^\s"']+/gi, "[REDACTED]");
 }

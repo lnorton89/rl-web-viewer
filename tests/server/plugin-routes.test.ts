@@ -8,6 +8,7 @@ import { describe, expect, it } from "vitest";
 import { createServer } from "../../src/server/create-server.js";
 import { pluginsRoutes } from "../../src/server/routes/plugins.js";
 import type { PluginRuntime } from "../../src/plugins/plugin-contract.js";
+import { createPluginRuntime } from "../../src/plugins/plugin-registry.js";
 import type {
   PluginActionResult,
   PluginStatus,
@@ -18,6 +19,11 @@ const forbiddenPayloadFragments = [
   "access_token",
   "refresh_token",
   "client_secret",
+  "Bearer ",
+  "ya29.",
+  "unit-test-refresh-token",
+  "unit-test-client-secret",
+  "unit-test-auth-code",
   "rtsp://",
   "rtmp://",
   "rtmps://",
@@ -154,6 +160,72 @@ describe("plugin routes", () => {
     await app.close();
   });
 
+  it("dispatches YouTube auth actions through routes without token or client-secret material", async () => {
+    const directory = await mkdtemp(path.join(os.tmpdir(), "reolink-youtube-"));
+    const runtime = createPluginRuntime({
+      configPath: path.join(directory, "plugin.config.json"),
+      youtube: {
+        configPath: path.join(directory, "client.json"),
+        statePath: path.join(directory, "oauth-state.json"),
+        tokensPath: path.join(directory, "tokens.json"),
+        oauthClientFactory: () => new FakeOAuthClient(),
+      },
+      now: () => "2026-04-27T00:00:00.000Z",
+    });
+    const app = await createApp(runtime);
+
+    const config = await app.inject({
+      method: "POST",
+      url: "/api/plugins/youtube-streaming/config",
+      payload: {
+        values: {
+          oauthClient: createDesktopClientJson(),
+        },
+      },
+    });
+    const begin = await app.inject({
+      method: "POST",
+      url: "/api/plugins/youtube-streaming/actions/auth.begin",
+      payload: {
+        redirectUri:
+          "http://127.0.0.1:4000/api/plugins/youtube-streaming/oauth/callback",
+      },
+    });
+    const state = (begin.json() as { auth?: { pendingState?: string } }).auth
+      ?.pendingState;
+    const callback = await app.inject({
+      method: "POST",
+      url: "/api/plugins/youtube-streaming/actions/auth.callback",
+      payload: {
+        code: "unit-test-auth-code",
+        state,
+      },
+    });
+    const refresh = await app.inject({
+      method: "POST",
+      url: "/api/plugins/youtube-streaming/actions/auth.refresh",
+      payload: {},
+    });
+    const revoke = await app.inject({
+      method: "POST",
+      url: "/api/plugins/youtube-streaming/actions/auth.revoke",
+      payload: {},
+    });
+
+    expect(config.statusCode).toBe(200);
+    expect(begin.statusCode).toBe(202);
+    expect(callback.statusCode).toBe(202);
+    expect(refresh.statusCode).toBe(202);
+    expect(revoke.statusCode).toBe(202);
+    expectBrowserSafe(config.body);
+    expectBrowserSafe(begin.body);
+    expectBrowserSafe(callback.body);
+    expectBrowserSafe(refresh.body);
+    expectBrowserSafe(revoke.body);
+
+    await app.close();
+  });
+
   it("mounts through createServer without breaking existing route dependency options", async () => {
     const staticRoot = await mkdtemp(path.join(os.tmpdir(), "reolink-static-"));
     await mkdirIndex(staticRoot);
@@ -212,6 +284,60 @@ async function createApp(runtime: PluginRuntime) {
     createPluginRuntime: () => runtime,
   });
   return app;
+}
+
+function createDesktopClientJson(): Record<string, unknown> {
+  return {
+    installed: {
+      client_id: "unit-test-client-id.apps.googleusercontent.com",
+      client_secret: "unit-test-client-secret",
+      redirect_uris: ["http://127.0.0.1:4000/oauth2callback"],
+    },
+  };
+}
+
+class FakeOAuthClient {
+  private credentials: Record<string, unknown> | null = null;
+
+  generateAuthUrl(options: Record<string, unknown>): string {
+    return `https://accounts.google.com/o/oauth2/v2/auth?state=${String(options.state)}`;
+  }
+
+  async getToken(): Promise<{ tokens: Record<string, unknown> }> {
+    return {
+      tokens: {
+        access_token: "ya29.unit-test-access-token",
+        refresh_token: "unit-test-refresh-token",
+        token_type: "Bearer",
+        scope: "https://www.googleapis.com/auth/youtube",
+        expiry_date: 1_800_000_000_000,
+      },
+    };
+  }
+
+  setCredentials(tokens: Record<string, unknown>): void {
+    this.credentials = tokens;
+  }
+
+  on(): void {
+    return;
+  }
+
+  async refreshAccessToken(): Promise<{
+    credentials: Record<string, unknown>;
+  }> {
+    return {
+      credentials: {
+        ...this.credentials,
+        access_token: "ya29.unit-test-refreshed-token",
+        expiry_date: 1_900_000_000_000,
+      },
+    };
+  }
+
+  async revokeCredentials(): Promise<void> {
+    this.credentials = null;
+  }
 }
 
 async function mkdirIndex(staticRoot: string): Promise<void> {

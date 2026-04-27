@@ -34,6 +34,7 @@ const UNSAFE_PLUGIN_PATTERNS = [
   /access_token/i,
   /refresh_token/i,
   /client_secret/i,
+  /Bearer\s+[A-Za-z0-9._~+/=-]+/i,
   /rtsp:\/\//i,
   /rtmp:\/\//i,
   /rtmps:\/\//i,

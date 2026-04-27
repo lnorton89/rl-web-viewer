@@ -112,9 +112,8 @@ describe("YouTube OAuth config and token storage", () => {
       tokensPath,
     );
 
-    expect((await loadYouTubeConfig(configPath)).clientId).toBe(
-      config.clientId,
-    );
+    const loadedConfig = await loadYouTubeConfig(configPath);
+    expect(loadedConfig?.clientId).toBe(config.clientId);
     expect((await loadYouTubeTokens(tokensPath))?.refresh_token).toBe(
       tokens.refresh_token,
     );
@@ -202,7 +201,7 @@ describe("YouTube OAuth service", () => {
     const refreshed = await service.refresh();
     const revoked = await service.revoke();
 
-    expect(fakeClient.credentials?.refresh_token).toBe(
+    expect(fakeClient.lastCredentialsSet?.refresh_token).toBe(
       "unit-test-refresh-token",
     );
     expect(fakeClient.revoked).toBe(true);
@@ -242,7 +241,7 @@ describe("YouTube plugin OAuth actions", () => {
       "auth.callback",
       {
         code: "unit-test-auth-code",
-        state: getAuthState(begin),
+        state: getAuthState(begin as unknown as { auth?: unknown }),
       },
     );
     const refreshed = await runtime.invokeAction(
@@ -257,7 +256,9 @@ describe("YouTube plugin OAuth actions", () => {
     );
 
     expect(configured.verified).toBe(true);
-    expect(callback.status.state).toBe("enabled");
+    expect(getAuth(callback as unknown as { auth?: unknown }).state).toBe(
+      "connected",
+    );
     expectBrowserSafe(configured);
     expectBrowserSafe(begin);
     expectBrowserSafe(callback);
@@ -285,6 +286,7 @@ class FakeOAuthClient {
   lastAuthOptions: Record<string, unknown> | null = null;
   exchangedCode: string | null = null;
   credentials: Record<string, unknown> | null = null;
+  lastCredentialsSet: Record<string, unknown> | null = null;
   revoked = false;
   private tokensHandler: ((tokens: Record<string, unknown>) => void) | null =
     null;
@@ -309,6 +311,7 @@ class FakeOAuthClient {
 
   setCredentials(tokens: Record<string, unknown>): void {
     this.credentials = tokens;
+    this.lastCredentialsSet = tokens;
   }
 
   on(eventName: string, handler: (tokens: Record<string, unknown>) => void): void {
@@ -344,10 +347,15 @@ function expectBrowserSafe(payload: unknown): void {
   }
 }
 
-function getAuthState(result: { status: unknown; message?: string }): string {
-  const status = result.status as YouTubeAuthStatus & { pendingState?: string };
-  expect(status.pendingState).toEqual(expect.any(String));
-  return status.pendingState;
+function getAuthState(result: { auth?: unknown }): string {
+  const auth = getAuth(result);
+  expect(auth.pendingState).toEqual(expect.any(String));
+  return auth.pendingState ?? "";
+}
+
+function getAuth(result: { auth?: unknown }): YouTubeAuthStatus {
+  expect(result.auth).toBeDefined();
+  return result.auth as YouTubeAuthStatus;
 }
 
 async function createTempYouTubePaths(): Promise<{

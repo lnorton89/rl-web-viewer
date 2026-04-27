@@ -14,6 +14,8 @@
   "dependencies": {
     "@fastify/static": "^9.1.0",
     "fastify": "^5.8.5",
+    "google-auth-library": "^10.6.2",
+    "googleapis": "^171.4.0",
     "hls.js": "^1.6.16",
     "pino": "^10.3.1",
     "react": "^19.2.5",
