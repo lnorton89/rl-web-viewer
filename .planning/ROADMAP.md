@@ -16,6 +16,7 @@
 | 4 | Network & System | Network info and settings | NET-01, NET-02 | 3 |
 | 5 | Settings Parity | Advanced ISP controls | CONF-05, CONF-06, CONF-07, CONF-08 | 4 |
 | 6 | User Management | Password change | USER-01 | 1 |
+| 9 | Plugin System & YouTube Streaming | Extensible plugin runtime with first YouTube live stream plugin | PLUG-01, PLUG-02, PLUG-03, PLUG-04 | 4 |
 
 Plans:
 - [x] 01-01-PLAN.md — MUI foundation (dependencies, theme, LayoutShell)
@@ -143,6 +144,34 @@ Success criteria:
 
 Plans:
 - [ ] TBD (run /gsd-plan-phase 8 to break down)
+
+### Phase 9: Plugin System & YouTube Streaming
+
+Goal: Add an extensible plugin system and ship the first plugin for streaming the camera live view to YouTube.
+
+Requirements:
+
+- PLUG-01: Plugin runtime and extension contract
+- PLUG-02: YouTube authentication and credential storage flow
+- PLUG-03: YouTube stream setup, start/stop control, and status reporting
+- PLUG-04: Shareable stream metadata and UI integration
+
+Success criteria:
+
+1. Plugins can be discovered, configured, enabled, disabled, and invoked through stable server APIs.
+2. YouTube plugin handles auth setup without exposing secrets to browser responses or logs.
+3. YouTube plugin can create/configure a stream target and control streaming from the existing camera media pipeline.
+4. Dashboard exposes plugin status, controls, and sharing information for the YouTube stream.
+
+**Depends on:** Phase 3, Phase 4
+
+**UI hint**: yes
+
+Plans:
+- [ ] 09-01-PLAN.md — Plugin runtime, contracts, config, registry, routes, and secret guards
+- [ ] 09-02-PLAN.md — YouTube OAuth client, token store, auth actions, and redacted status
+- [ ] 09-03-PLAN.md — YouTube Live API setup plus FFmpeg egress start/stop/status lifecycle
+- [ ] 09-04-PLAN.md — Dashboard plugin panel, YouTube controls, and share metadata UI
 
 ---
 
