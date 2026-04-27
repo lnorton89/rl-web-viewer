@@ -41,7 +41,7 @@
 ### Plugin System & YouTube Streaming
 
 - [x] **PLUG-01**: Plugins can be discovered, configured, enabled, disabled, and invoked through stable server APIs.
-- [ ] **PLUG-02**: YouTube plugin handles authentication setup without exposing secrets to browser responses or logs.
+- [x] **PLUG-02**: YouTube plugin handles authentication setup without exposing secrets to browser responses or logs.
 - [ ] **PLUG-03**: YouTube plugin can create/configure a stream target and control streaming from the existing camera media pipeline.
 - [ ] **PLUG-04**: Dashboard exposes plugin status, controls, and sharing information for the YouTube stream.
 
