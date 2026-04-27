@@ -2,6 +2,19 @@ import {
   buildYouTubeAuthStatus,
   saveYouTubeConfig,
 } from "../../config/youtube-config.js";
+import {
+  createYouTubeStreamService,
+  type YouTubeProcessRunner,
+  type YouTubeStreamService,
+  type YouTubeStreamStartInput,
+} from "../../media/youtube-stream-service.js";
+import type { FfmpegAvailability } from "../../media/youtube-runtime.js";
+import type {
+  YouTubeBroadcastLifecycle,
+  YouTubePersistedStreamConfig,
+  YouTubePrivacyStatus,
+  YouTubeStreamHealth,
+} from "../../types/youtube-streaming.js";
 import type { PluginConfigState } from "../../config/plugin-config.js";
 import type {
   PluginActionResult,
@@ -18,17 +31,68 @@ import {
   type PluginModule,
 } from "../plugin-contract.js";
 import {
+  createYouTubeLiveApi,
+  type YouTubeLiveApi,
+} from "./youtube-live-api.js";
+import {
   createYouTubeOAuthService,
   type YouTubeOAuthServiceOptions,
 } from "./youtube-oauth.js";
 
-export type YouTubePluginOptions = YouTubeOAuthServiceOptions;
+export type YouTubePluginOptions = YouTubeOAuthServiceOptions & {
+  liveApiFactory?: () => YouTubeLiveApi;
+  ffmpegAvailability?: () => Promise<FfmpegAvailability>;
+  processRunner?: YouTubeProcessRunner;
+  resolveCameraSource?: () => Promise<string | null>;
+};
 
 const YOUTUBE_PLUGIN_ID: PluginId = "youtube-streaming";
 
 export function createYouTubePlugin(
   options: YouTubePluginOptions = {},
 ): PluginModule {
+  let streamService: YouTubeStreamService | null = null;
+  let localStreamConfig: ReturnType<typeof extractStreamConfig> | null = null;
+
+  function getStreamService(context: PluginActionContext): YouTubeStreamService {
+    localStreamConfig ??= extractStreamConfig(
+      getPluginState(context.config, YOUTUBE_PLUGIN_ID).values,
+    );
+    streamService ??= createYouTubeStreamService({
+      now: options.now ?? context.now,
+      oauth: createYouTubeOAuthService({
+        ...options,
+        now: options.now ?? context.now,
+      }),
+      youtube: options.liveApiFactory?.() ?? createYouTubeLiveApi(),
+      ffmpegAvailability: options.ffmpegAvailability,
+      processRunner: options.processRunner,
+      resolveCameraSource: options.resolveCameraSource,
+      loadStreamConfig: async () => localStreamConfig ?? {},
+      saveStreamConfig: async (streamConfig) => {
+        const latest = context.config;
+        const current = getPluginState(latest, YOUTUBE_PLUGIN_ID);
+        const verified = await context.saveConfig(
+          setPluginState(latest, YOUTUBE_PLUGIN_ID, {
+            ...current,
+            values: {
+              ...current.values,
+              ...streamConfig,
+            },
+          }),
+        );
+
+        localStreamConfig = extractStreamConfig(
+          getPluginState(verified, YOUTUBE_PLUGIN_ID).values,
+        );
+
+        return localStreamConfig;
+      },
+    });
+
+    return streamService;
+  }
+
   return {
     id: YOUTUBE_PLUGIN_ID,
     async getSummary(context) {
@@ -49,11 +113,7 @@ export function createYouTubePlugin(
         status,
         actions: buildActions(state.enabled, authStatus.connected),
         config: buildConfigFields(state.values, authStatus.configured),
-        share: {
-          available: false,
-          url: null,
-          label: null,
-        },
+        share: buildShare(state.values),
       } satisfies PluginSummary;
     },
     getStatus(context) {
@@ -140,15 +200,60 @@ export function createYouTubePlugin(
         });
       }
 
-      if (actionId === "start" || actionId === "stop") {
+      if (
+        actionId === "stream.setup" ||
+        actionId === "stream.start" ||
+        actionId === "stream.stop" ||
+        actionId === "stream.status" ||
+        actionId === "start" ||
+        actionId === "stop"
+      ) {
         const state = getPluginState(context.config, YOUTUBE_PLUGIN_ID);
 
         if (!state.enabled) {
           throw new PluginRuntimeError("disabled", "Plugin is disabled.", 409);
         }
 
+        const service = getStreamService(context);
+
+        if (actionId === "stream.setup") {
+          const result = await safeStreamCall(() =>
+            service.setup(parseStreamBody(body, state.values)),
+          );
+          return buildActionResult(context, actionId, {
+            accepted: result.accepted,
+            stream: result.status,
+            status: pluginStatusFromStream(context, result.status),
+          });
+        }
+
+        if (actionId === "stream.start" || actionId === "start") {
+          const result = await safeStreamCall(() =>
+            service.start(parseStreamBody(body, state.values)),
+          );
+          return buildActionResult(context, actionId, {
+            accepted: result.accepted,
+            stream: result.status,
+            status: pluginStatusFromStream(context, result.status),
+          });
+        }
+
+        if (actionId === "stream.stop" || actionId === "stop") {
+          const result = await safeStreamCall(() =>
+            service.stop(parseStopBody(body)),
+          );
+          return buildActionResult(context, actionId, {
+            accepted: result.accepted,
+            stream: result.status,
+            status: pluginStatusFromStream(context, result.status),
+          });
+        }
+
+        const status = await service.getStatus();
         return buildActionResult(context, actionId, {
-          message: `${actionId} accepted by plugin runtime.`,
+          accepted: true,
+          stream: status,
+          status: pluginStatusFromStream(context, status),
         });
       }
 
@@ -221,6 +326,7 @@ function buildConfigFields(
       options: [
         { label: "Private", value: "private" },
         { label: "Unlisted", value: "unlisted" },
+        { label: "Public", value: "public" },
       ],
     },
     {
@@ -257,14 +363,26 @@ function buildActions(
       disabledReason: connected ? null : "YouTube account is not connected.",
     },
     {
-      id: "start",
+      id: "stream.setup",
+      label: "Set Up Stream",
+      enabled,
+      disabledReason: enabled ? null : "Plugin is disabled.",
+    },
+    {
+      id: "stream.start",
       label: "Start",
       enabled,
       disabledReason: enabled ? null : "Plugin is disabled.",
     },
     {
-      id: "stop",
+      id: "stream.stop",
       label: "Stop",
+      enabled,
+      disabledReason: enabled ? null : "Plugin is disabled.",
+    },
+    {
+      id: "stream.status",
+      label: "Status",
       enabled,
       disabledReason: enabled ? null : "Plugin is disabled.",
     },
@@ -346,10 +464,15 @@ function validateConfigValues(
   const privacy =
     values.privacy == null ? undefined : getRequiredString(values.privacy);
 
-  if (privacy !== undefined && privacy !== "private" && privacy !== "unlisted") {
+  if (
+    privacy !== undefined &&
+    privacy !== "private" &&
+    privacy !== "unlisted" &&
+    privacy !== "public"
+  ) {
     throw new PluginRuntimeError(
       "validation",
-      "Privacy must be private or unlisted.",
+      "Privacy must be private, unlisted, or public.",
       422,
     );
   }
@@ -358,6 +481,129 @@ function validateConfigValues(
     ...(title === undefined ? {} : { title }),
     ...(privacy === undefined ? {} : { privacy }),
   };
+}
+
+function extractStreamConfig(
+  values: Record<string, unknown>,
+): YouTubePersistedStreamConfig {
+  return {
+    ...(getOptionalString(values.streamId) ? { streamId: getOptionalString(values.streamId) } : {}),
+    ...(getOptionalString(values.broadcastId)
+      ? { broadcastId: getOptionalString(values.broadcastId) }
+      : {}),
+    ...(getOptionalString(values.title) ? { title: getOptionalString(values.title) } : {}),
+    ...(getPrivacyValue(values.privacy) ? { privacy: getPrivacyValue(values.privacy) } : {}),
+    ...(getLifecycleValue(values.lifecycle)
+      ? { lifecycle: getLifecycleValue(values.lifecycle) }
+      : {}),
+    ...(getHealthValue(values.streamHealth)
+      ? { streamHealth: getHealthValue(values.streamHealth) }
+      : {}),
+    ...(getOptionalString(values.watchUrl)
+      ? { watchUrl: getOptionalString(values.watchUrl) }
+      : {}),
+  };
+}
+
+function buildShare(values: Record<string, unknown>): PluginSummary["share"] {
+  const watchUrl = getOptionalString(values.watchUrl);
+  const title = getOptionalString(values.title);
+
+  return {
+    available: Boolean(watchUrl),
+    url: watchUrl ?? null,
+    label: title ?? null,
+  };
+}
+
+function parseStreamBody(
+  body: unknown,
+  values: Record<string, unknown>,
+): YouTubeStreamStartInput {
+  const input = typeof body === "object" && body !== null
+    ? (body as Record<string, unknown>)
+    : {};
+  const title = getOptionalString(input.title) ?? getOptionalString(values.title);
+  const privacy = getPrivacyValue(input.privacy) ?? getPrivacyValue(values.privacy);
+  const confirmPublic = input.confirmPublic === true;
+
+  return {
+    ...(title ? { title } : {}),
+    ...(privacy ? { privacy } : {}),
+    confirmPublic,
+  };
+}
+
+function parseStopBody(body: unknown): { reason?: "user" | "shutdown" | "failure" } {
+  const input = typeof body === "object" && body !== null
+    ? (body as Record<string, unknown>)
+    : {};
+  const reason = input.reason;
+
+  if (reason === "shutdown" || reason === "failure" || reason === "user") {
+    return { reason };
+  }
+
+  return { reason: "user" };
+}
+
+async function safeStreamCall<T>(action: () => Promise<T>): Promise<T> {
+  try {
+    return await action();
+  } catch (error) {
+    throw new PluginRuntimeError(
+      "validation",
+      error instanceof Error ? error.message : "YouTube stream action failed.",
+      422,
+    );
+  }
+}
+
+function pluginStatusFromStream(
+  context: PluginActionContext,
+  stream: { broadcastLifecycle: string; process: { state: string; reason: string | null } },
+): PluginStatus {
+  const failed = stream.process.state === "failed";
+  return {
+    pluginId: YOUTUBE_PLUGIN_ID,
+    state: failed ? "needs-configuration" : "enabled",
+    message: failed
+      ? stream.process.reason ?? "YouTube streaming is unavailable."
+      : `YouTube stream is ${stream.broadcastLifecycle}.`,
+    updatedAt: context.now(),
+  };
+}
+
+function getOptionalString(value: unknown): string | undefined {
+  return typeof value === "string" && value.length > 0 ? value : undefined;
+}
+
+function getPrivacyValue(value: unknown): YouTubePrivacyStatus | undefined {
+  return value === "private" || value === "unlisted" || value === "public"
+    ? value
+    : undefined;
+}
+
+function getLifecycleValue(value: unknown): YouTubeBroadcastLifecycle | undefined {
+  return value === "not-created" ||
+    value === "created" ||
+    value === "ready" ||
+    value === "testing" ||
+    value === "live" ||
+    value === "complete" ||
+    value === "error"
+    ? value
+    : undefined;
+}
+
+function getHealthValue(value: unknown): YouTubeStreamHealth | undefined {
+  return value === "unknown" ||
+    value === "inactive" ||
+    value === "ready" ||
+    value === "active" ||
+    value === "error"
+    ? value
+    : undefined;
 }
 
 function parseRedirectBody(body: unknown): { redirectUri?: string } {

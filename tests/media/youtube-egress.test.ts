@@ -106,10 +106,10 @@ describe("YouTube FFmpeg egress", () => {
         "rtsp://admin:camera-password@192.168.1.140:554/h264Preview_01_main",
       oauth: createConnectedOAuth(),
       youtube: createActiveYouTubeApi({
-        transition: async ({ status }) => {
+        transition: async ({ status }: { status: "testing" | "live" | "complete" }) => {
           transitions.push(status);
           return {
-            id: "broadcast-123",
+            broadcastId: "broadcast-123",
             title: "Driveway",
             privacy: "unlisted",
             lifecycle: status === "complete" ? "complete" : "live",
@@ -181,6 +181,15 @@ function createPersistedStreamConfig() {
 
 function createActiveYouTubeApi(overrides: Record<string, unknown> = {}) {
   return {
+    setupBroadcast: async () => ({
+      streamId: "stream-123",
+      broadcastId: "broadcast-123",
+      title: "Driveway",
+      privacy: "unlisted" as const,
+      lifecycle: "ready" as const,
+      streamHealth: "ready" as const,
+      watchUrl: "https://www.youtube.com/watch?v=broadcast-123",
+    }),
     getStreamIngestion: async () => ({
       ingestionUrl: "rtmps://a.rtmps.youtube.com/live2",
       streamName: "unit-test-stream-key",
@@ -189,11 +198,18 @@ function createActiveYouTubeApi(overrides: Record<string, unknown> = {}) {
       streamId: "stream-123",
       health: "active" as const,
     }),
-    transition: async ({ status }: { status: string }) => ({
-      id: "broadcast-123",
+    transition: async ({ status }: { status: "testing" | "live" | "complete" }) => ({
+      broadcastId: "broadcast-123",
       title: "Driveway",
       privacy: "unlisted" as const,
       lifecycle: status === "complete" ? "complete" as const : "live" as const,
+      watchUrl: "https://www.youtube.com/watch?v=broadcast-123",
+    }),
+    transitionWhenActive: async ({ status }: { status: "testing" | "live" }) => ({
+      broadcastId: "broadcast-123",
+      title: "Driveway",
+      privacy: "unlisted" as const,
+      lifecycle: status,
       watchUrl: "https://www.youtube.com/watch?v=broadcast-123",
     }),
     ...overrides,

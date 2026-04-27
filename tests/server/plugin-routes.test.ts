@@ -100,7 +100,7 @@ describe("plugin routes", () => {
       url: "/api/plugins/youtube-streaming/config",
       payload: {
         values: {
-          privacy: "public",
+          privacy: "listed",
         },
       },
     });
@@ -432,8 +432,8 @@ function createFakeRuntime(): PluginRuntime {
       };
     },
     async configurePlugin(_pluginId, patch) {
-      if (patch.values?.privacy === "public") {
-        throw Object.assign(new Error("Privacy must be private or unlisted"), {
+      if (patch.values?.privacy === "listed") {
+        throw Object.assign(new Error("Privacy must be private, unlisted, or public"), {
           code: "validation",
           statusCode: 422,
         });

@@ -42,9 +42,26 @@ export type YouTubeShareMetadata = {
 
 export type YouTubeStreamingStatus = {
   auth: YouTubeAuthStatus;
+  title: string | null;
   privacy: YouTubePrivacyStatus;
   broadcastLifecycle: YouTubeBroadcastLifecycle;
   streamHealth: YouTubeStreamHealth;
   share: YouTubeShareMetadata;
+  process: {
+    state: "stopped" | "starting" | "running" | "failed";
+    pid: number | null;
+    reason: string | null;
+    diagnostics: readonly string[];
+  };
   updatedAt: string;
+};
+
+export type YouTubePersistedStreamConfig = {
+  streamId?: string;
+  broadcastId?: string;
+  title?: string;
+  privacy?: YouTubePrivacyStatus;
+  lifecycle?: YouTubeBroadcastLifecycle;
+  streamHealth?: YouTubeStreamHealth;
+  watchUrl?: string;
 };
