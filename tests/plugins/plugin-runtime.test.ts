@@ -42,7 +42,9 @@ describe("plugin runtime", () => {
   });
 
   it("returns browser-safe summaries, status, config metadata, and action results", async () => {
-    const runtime = createPluginRuntime();
+    const runtime = createPluginRuntime({
+      configPath: await createTempConfigPath(),
+    });
 
     const summary = await runtime.listPlugins();
     const status = await runtime.getPluginStatus("youtube-streaming");
@@ -70,7 +72,9 @@ describe("plugin runtime", () => {
   });
 
   it("normalizes unknown plugins, disabled actions, unsupported actions, and validation failures", async () => {
-    const runtime = createPluginRuntime();
+    const runtime = createPluginRuntime({
+      configPath: await createTempConfigPath(),
+    });
 
     await expect(runtime.getPluginStatus("missing")).rejects.toMatchObject({
       code: "not-found",
@@ -152,4 +156,9 @@ function expectBrowserSafe(payload: unknown): void {
   for (const fragment of forbiddenPayloadFragments) {
     expect(serialized).not.toContain(fragment);
   }
+}
+
+async function createTempConfigPath(): Promise<string> {
+  const directory = await mkdtemp(path.join(os.tmpdir(), "reolink-plugins-"));
+  return path.join(directory, "plugin.config.json");
 }

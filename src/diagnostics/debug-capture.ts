@@ -19,6 +19,10 @@ export function sanitizeForDebug(value: unknown, parentKey = ""): unknown {
     return value.map((entry) => sanitizeForDebug(entry, parentKey));
   }
 
+  if (typeof value === "string") {
+    return sanitizeStringForDebug(value);
+  }
+
   if (!value || typeof value !== "object") {
     return value;
   }
@@ -27,24 +31,25 @@ export function sanitizeForDebug(value: unknown, parentKey = ""): unknown {
     Object.entries(value).map(([key, entryValue]) => {
       const keyLower = key.toLowerCase();
       const parentLower = parentKey.toLowerCase();
+      const outputKey = getDebugKey(key, keyLower);
 
-      if (keyLower.includes("password")) {
-        return [key, "[REDACTED]"];
+      if (isSecretKey(keyLower)) {
+        return [outputKey, "[REDACTED]"];
       }
 
       if (keyLower.includes("token")) {
         if (typeof entryValue === "string") {
-          return [key, maskTokenLikeValue(entryValue)];
+          return [outputKey, maskTokenLikeValue(entryValue)];
         }
 
-        return [key, sanitizeForDebug(entryValue, key)];
+        return [outputKey, sanitizeForDebug(entryValue, key)];
       }
 
       if (parentLower === "token" && keyLower === "name") {
-        return [key, maskTokenLikeValue(entryValue)];
+        return [outputKey, maskTokenLikeValue(entryValue)];
       }
 
-      return [key, sanitizeForDebug(entryValue, key)];
+      return [outputKey, sanitizeForDebug(entryValue, key)];
     }),
   );
 }
@@ -76,6 +81,42 @@ function maskTokenLikeValue(value: unknown): unknown {
   }
 
   return sanitizeForDebug(value, "token");
+}
+
+function isSecretKey(keyLower: string): boolean {
+  return (
+    keyLower.includes("password") ||
+    keyLower.includes("secret") ||
+    keyLower.includes("streamname") ||
+    keyLower.includes("stream_name") ||
+    keyLower.includes("ingestion") ||
+    keyLower.includes("rtsp") ||
+    keyLower.includes("rtmp")
+  );
+}
+
+function getDebugKey(key: string, keyLower: string): string {
+  if (
+    keyLower === "access_token" ||
+    keyLower === "refresh_token" ||
+    keyLower === "client_secret" ||
+    keyLower === "streamname" ||
+    keyLower === "stream_name"
+  ) {
+    return "redacted";
+  }
+
+  return key;
+}
+
+function sanitizeStringForDebug(value: string): string {
+  if (/^rtmps?:\/\//i.test(value) || /^rtsp:\/\//i.test(value)) {
+    return "[REDACTED]";
+  }
+
+  return value
+    .replace(/rtmps?:\/\/[^\s"']+/gi, "[REDACTED]")
+    .replace(/rtsp:\/\/[^\s"']+/gi, "[REDACTED]");
 }
 
 function slugify(value: string): string {
