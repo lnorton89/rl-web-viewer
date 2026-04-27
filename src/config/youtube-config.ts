@@ -1,4 +1,4 @@
-import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdir, readFile, rename, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 
 import { z } from "zod";
@@ -87,7 +87,7 @@ export async function saveYouTubeConfig(
 ): Promise<YouTubeConfig> {
   await mkdir(path.dirname(configPath), { recursive: true });
   const parsed = parseYouTubeConfig(config);
-  await writeFile(configPath, `${JSON.stringify(parsed, null, 2)}\n`, "utf8");
+  await writeJsonAtomically(configPath, parsed);
   const verified = await loadYouTubeConfig(configPath);
 
   if (!verified) {
@@ -118,7 +118,7 @@ export async function saveYouTubeTokens(
 ): Promise<YouTubeTokens> {
   await mkdir(path.dirname(tokensPath), { recursive: true });
   const parsed = youtubeTokensSchema.parse(tokens);
-  await writeFile(tokensPath, `${JSON.stringify(parsed, null, 2)}\n`, "utf8");
+  await writeJsonAtomically(tokensPath, parsed);
   const verified = await loadYouTubeTokens(tokensPath);
 
   if (!verified) {
@@ -232,5 +232,35 @@ function isFileNotFound(error: unknown): boolean {
     error !== null &&
     "code" in error &&
     error.code === "ENOENT"
+  );
+}
+
+async function writeJsonAtomically(
+  filePath: string,
+  value: unknown,
+): Promise<void> {
+  const tempPath = `${filePath}.${process.pid}.${Date.now()}.${Math.random()
+    .toString(36)
+    .slice(2)}.tmp`;
+
+  await writeFile(tempPath, `${JSON.stringify(value, null, 2)}\n`, "utf8");
+  try {
+    await rename(tempPath, filePath);
+  } catch (error) {
+    if (!isWindowsReplaceError(error)) {
+      throw error;
+    }
+
+    await rm(filePath, { force: true });
+    await rename(tempPath, filePath);
+  }
+}
+
+function isWindowsReplaceError(error: unknown): boolean {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    (error.code === "EPERM" || error.code === "EEXIST")
   );
 }
