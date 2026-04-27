@@ -1,6 +1,6 @@
 import { ReactNode } from 'react';
 import { Box, Drawer, List, ListItemButton, ListItemIcon, ListItemText, Toolbar, Tooltip, Typography } from '@mui/material';
-import { Videocam, Settings } from '@mui/icons-material';
+import { Extension, Videocam, Settings } from '@mui/icons-material';
 
 interface NavItem {
   id: string;
@@ -11,6 +11,7 @@ interface NavItem {
 
 const NAV_ITEMS: NavItem[] = [
   { id: 'live', label: 'Live View', tooltip: 'View camera live feed', icon: <Videocam /> },
+  { id: 'plugins', label: 'Plugins', tooltip: 'Manage plugins and streaming', icon: <Extension /> },
   { id: 'settings', label: 'Settings', tooltip: 'Configure camera settings', icon: <Settings /> },
 ];
 

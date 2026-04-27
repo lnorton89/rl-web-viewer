@@ -59,13 +59,15 @@ const startYouTubeStreamingMock = vi.mocked(startYouTubeStreaming);
 describe("plugin dashboard panel", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    Object.assign(navigator, {
-      clipboard: {
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: {
         writeText: vi.fn().mockResolvedValue(undefined),
       },
     });
     useLiveViewMock.mockReturnValue(createLiveViewState());
     useYouTubeStreamingMock.mockReturnValue(createHookState());
+    fetchPluginsMock.mockResolvedValue([createPlugin()]);
   });
 
   afterEach(() => {
@@ -148,7 +150,7 @@ describe("plugin dashboard panel", () => {
 
     render(<YoutubeStreamingPanel />);
 
-    expect(screen.getByText(expected)).not.toBeNull();
+    expect(screen.getAllByText(expected).length).toBeGreaterThan(0);
   });
 
   it("disables start until auth, setup, and runtime prerequisites are ready", () => {
@@ -176,7 +178,10 @@ describe("plugin dashboard panel", () => {
     ]) {
       useYouTubeStreamingMock.mockReturnValue(createHookState({ status }));
       const { unmount } = render(<YoutubeStreamingPanel />);
-      expect(screen.getByRole("button", { name: "Start Streaming" })).toBeDisabled();
+      expect(
+        (screen.getByRole("button", { name: "Start Streaming" }) as HTMLButtonElement)
+          .disabled,
+      ).toBe(true);
       unmount();
     }
 
@@ -192,7 +197,10 @@ describe("plugin dashboard panel", () => {
 
     render(<YoutubeStreamingPanel />);
 
-    expect(screen.getByRole("button", { name: "Start Streaming" })).not.toBeDisabled();
+    expect(
+      (screen.getByRole("button", { name: "Start Streaming" }) as HTMLButtonElement)
+        .disabled,
+    ).toBe(false);
   });
 
   it("renders only safe share metadata when a watch URL is available", () => {
@@ -216,9 +224,9 @@ describe("plugin dashboard panel", () => {
     render(<YoutubeStreamingPanel />);
 
     expect(screen.getByText("Driveway Camera")).not.toBeNull();
-    expect(screen.getByText("unlisted")).not.toBeNull();
-    expect(screen.getByText("live")).not.toBeNull();
-    expect(screen.getByText("active")).not.toBeNull();
+    expect(screen.getAllByText("unlisted").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("live").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("active").length).toBeGreaterThan(0);
     expect(screen.getByText("https://www.youtube.com/watch?v=abc123")).not.toBeNull();
   });
 
@@ -250,7 +258,13 @@ describe("plugin dashboard panel", () => {
   it("copies and opens the watch URL only", async () => {
     const user = userEvent.setup();
     const open = vi.spyOn(window, "open").mockImplementation(() => null);
-    const writeText = vi.mocked(navigator.clipboard.writeText);
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: {
+        writeText,
+      },
+    });
     useYouTubeStreamingMock.mockReturnValue(
       createHookState({
         status: createStatus({
@@ -311,6 +325,9 @@ describe("plugin browser API clients", () => {
   });
 
   it("uses JSON headers, parses error payloads, and accepts AbortSignal", async () => {
+    const actualPluginApi = await vi.importActual<
+      typeof import("../../web/src/lib/plugin-api.js")
+    >("../../web/src/lib/plugin-api.js");
     const abortController = new AbortController();
     const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(
       new Response(JSON.stringify({ error: "Plugin unavailable" }), {
@@ -319,7 +336,7 @@ describe("plugin browser API clients", () => {
       }),
     );
 
-    await expect(fetchPlugins(abortController.signal)).rejects.toThrow(
+    await expect(actualPluginApi.fetchPlugins(abortController.signal)).rejects.toThrow(
       "Plugin unavailable",
     );
 
@@ -338,7 +355,7 @@ describe("plugin browser API clients", () => {
       }),
     );
 
-    await invokePluginAction("youtube-streaming", "stream.start", {
+    await actualPluginApi.invokePluginAction("youtube-streaming", "stream.start", {
       confirmPublic: true,
     });
 
@@ -356,13 +373,30 @@ describe("plugin browser API clients", () => {
   });
 
   it("wraps YouTube status and start helpers around safe plugin actions", async () => {
-    fetchYouTubeStreamingStatusMock.mockResolvedValueOnce(createStatus());
-    startYouTubeStreamingMock.mockResolvedValueOnce(createStatus({ broadcastLifecycle: "live" }));
+    const actualYouTubeApi = await vi.importActual<
+      typeof import("../../web/src/lib/youtube-streaming-api.js")
+    >("../../web/src/lib/youtube-streaming-api.js");
+    invokePluginActionMock.mockResolvedValueOnce({
+      accepted: true,
+      actionId: "stream.status",
+      ok: true,
+      pluginId: "youtube-streaming",
+      status: createPlugin().status,
+      stream: createStatus(),
+    });
+    invokePluginActionMock.mockResolvedValueOnce({
+      accepted: true,
+      actionId: "stream.start",
+      ok: true,
+      pluginId: "youtube-streaming",
+      status: createPlugin().status,
+      stream: createStatus({ broadcastLifecycle: "live" }),
+    });
 
-    await expect(fetchYouTubeStreamingStatus()).resolves.toMatchObject({
+    await expect(actualYouTubeApi.fetchYouTubeStreamingStatus()).resolves.toMatchObject({
       broadcastLifecycle: "not-created",
     });
-    await expect(startYouTubeStreaming({ confirmPublic: true })).resolves.toMatchObject({
+    await expect(actualYouTubeApi.startYouTubeStreaming({ confirmPublic: true })).resolves.toMatchObject({
       broadcastLifecycle: "live",
     });
   });
@@ -380,8 +414,11 @@ describe("YouTube streaming hook", () => {
   });
 
   it("fetches status, exposes safe command errors, and refreshes after actions", async () => {
+    const actualHook = await vi.importActual<
+      typeof import("../../web/src/hooks/use-youtube-streaming.js")
+    >("../../web/src/hooks/use-youtube-streaming.js");
     function Harness() {
-      const hook = useYouTubeStreaming();
+      const hook = actualHook.useYouTubeStreaming();
       return (
         <div>
           <p>{hook.status?.broadcastLifecycle ?? "loading"}</p>

@@ -2,6 +2,7 @@ import { useLayoutEffect, useState } from "react";
 import { LayoutShell } from "./components/LayoutShell.js";
 import { LiveViewerFrame } from "./components/LiveViewerFrame.js";
 import { SettingsPanel } from "./components/SettingsPanel.js";
+import { PluginPanel } from "./components/PluginPanel.js";
 import { ModeSwitcher } from "./components/ModeSwitcher.js";
 import { DiagnosticsDisclosure } from "./components/DiagnosticsDisclosure.js";
 import { PtzPanel } from "./components/PtzPanel.js";
@@ -90,6 +91,8 @@ export default function App() {
             <SettingsPanel />
           </Box>
         );
+      case "plugins":
+        return <PluginPanel />;
       default:
         return null;
     }
