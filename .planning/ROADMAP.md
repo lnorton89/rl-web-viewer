@@ -168,7 +168,7 @@ Success criteria:
 **UI hint**: yes
 
 Plans:
-- [ ] 09-01-PLAN.md — Plugin runtime, contracts, config, registry, routes, and secret guards
+- [x] 09-01-PLAN.md — Plugin runtime, contracts, config, registry, routes, and secret guards
 - [ ] 09-02-PLAN.md — YouTube OAuth client, token store, auth actions, and redacted status
 - [ ] 09-03-PLAN.md — YouTube Live API setup plus FFmpeg egress start/stop/status lifecycle
 - [ ] 09-04-PLAN.md — Dashboard plugin panel, YouTube controls, and share metadata UI
