@@ -36,6 +36,7 @@ import {
 } from "./youtube-live-api.js";
 import {
   createYouTubeOAuthService,
+  type YouTubeOAuthService,
   type YouTubeOAuthServiceOptions,
 } from "./youtube-oauth.js";
 
@@ -58,13 +59,14 @@ export function createYouTubePlugin(
     localStreamConfig ??= extractStreamConfig(
       getPluginState(context.config, YOUTUBE_PLUGIN_ID).values,
     );
+    const oauthService = createYouTubeOAuthService({
+      ...options,
+      now: options.now ?? context.now,
+    });
     streamService ??= createYouTubeStreamService({
       now: options.now ?? context.now,
-      oauth: createYouTubeOAuthService({
-        ...options,
-        now: options.now ?? context.now,
-      }),
-      youtube: options.liveApiFactory?.() ?? createYouTubeLiveApi(),
+      oauth: oauthService,
+      youtube: options.liveApiFactory?.() ?? createAuthenticatedLiveApi(oauthService),
       ffmpegAvailability: options.ffmpegAvailability,
       processRunner: options.processRunner,
       resolveCameraSource: options.resolveCameraSource,
@@ -262,6 +264,32 @@ export function createYouTubePlugin(
         `Unsupported action: ${actionId}`,
         409,
       );
+    },
+  };
+}
+
+function createAuthenticatedLiveApi(oauthService: YouTubeOAuthService): YouTubeLiveApi {
+  async function resolveApi(): Promise<YouTubeLiveApi> {
+    return createYouTubeLiveApi({
+      auth: await oauthService.createAuthenticatedClient(),
+    });
+  }
+
+  return {
+    async setupBroadcast(input) {
+      return (await resolveApi()).setupBroadcast(input);
+    },
+    async getStreamIngestion(streamId) {
+      return (await resolveApi()).getStreamIngestion(streamId);
+    },
+    async getStreamStatus(streamId) {
+      return (await resolveApi()).getStreamStatus(streamId);
+    },
+    async transition(input) {
+      return (await resolveApi()).transition(input);
+    },
+    async transitionWhenActive(input) {
+      return (await resolveApi()).transitionWhenActive(input);
     },
   };
 }

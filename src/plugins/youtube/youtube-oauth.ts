@@ -26,7 +26,7 @@ type OAuthClientOptions = {
   redirectUri: string;
 };
 
-type OAuthClientLike = {
+export type OAuthClientLike = {
   generateAuthUrl(options: Record<string, unknown>): string;
   getToken(code: string): Promise<{ tokens: Record<string, unknown> }>;
   setCredentials(tokens: Record<string, unknown>): void;
@@ -44,6 +44,7 @@ export type YouTubeOAuthServiceOptions = {
 };
 
 export type YouTubeOAuthService = {
+  createAuthenticatedClient(): Promise<OAuthClientLike>;
   beginAuth(input: { redirectUri?: string }): Promise<{
     authUrl: string;
     state: string;
@@ -92,6 +93,12 @@ export function createYouTubeOAuthService(
   }
 
   return {
+    async createAuthenticatedClient() {
+      const client = await createClient();
+      const tokens = await requireTokens(tokensPath);
+      client.setCredentials(tokens);
+      return client;
+    },
     async beginAuth(input) {
       const redirectUri =
         input.redirectUri ?? "http://127.0.0.1:4000/api/plugins/youtube-streaming/oauth/callback";
