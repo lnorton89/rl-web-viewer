@@ -14,13 +14,17 @@ import type {
   LiveViewBootstrap,
 } from "../../src/types/live-view.js";
 import { useLiveView } from "../../web/src/hooks/use-live-view.js";
-import { fetchLiveViewBootstrap } from "../../web/src/lib/live-view-api.js";
+import {
+  fetchLiveViewBootstrap,
+  fetchLiveViewHealth,
+} from "../../web/src/lib/live-view-api.js";
 import { attachHlsPlayer } from "../../web/src/lib/players/hls-player.js";
 import { attachSnapshotPlayer } from "../../web/src/lib/players/snapshot-player.js";
 import { attachWebRtcPlayer } from "../../web/src/lib/players/webrtc-player.js";
 
 vi.mock("../../web/src/lib/live-view-api.js", () => ({
   fetchLiveViewBootstrap: vi.fn(),
+  fetchLiveViewHealth: vi.fn(),
 }));
 
 vi.mock("../../web/src/lib/players/webrtc-player.js", () => ({
@@ -45,6 +49,7 @@ type MockAttachment = {
 };
 
 const fetchLiveViewBootstrapMock = vi.mocked(fetchLiveViewBootstrap);
+const fetchLiveViewHealthMock = vi.mocked(fetchLiveViewHealth);
 const attachWebRtcPlayerMock = vi.mocked(attachWebRtcPlayer);
 const attachHlsPlayerMock = vi.mocked(attachHlsPlayer);
 const attachSnapshotPlayerMock = vi.mocked(attachSnapshotPlayer);
@@ -60,6 +65,9 @@ describe("useLiveView", () => {
     webrtcAttachments.length = 0;
     hlsAttachments.length = 0;
     snapshotAttachments.length = 0;
+    fetchLiveViewHealthMock.mockResolvedValue({
+      relay: "ready",
+    });
 
     attachWebRtcPlayerMock.mockImplementation((element, url, options = {}) =>
       createAttachment(webrtcAttachments, element, url, options.onError),
@@ -229,6 +237,40 @@ describe("useLiveView", () => {
 
     await flushAsyncWork();
     expect(screen.getByText("Live")).not.toBeNull();
+  });
+
+  it("surfaces camera auth failures from relay health instead of a generic HLS error", async () => {
+    fetchLiveViewBootstrapMock.mockResolvedValue(
+      createBootstrap({
+        preferredModeId: "hls:main",
+        fallbackOrder: ["hls:main", "snapshot:main"],
+        modes: [
+          createMode("hls:main", { hlsUrl: "/hls/main/index.m3u8" }),
+          createMode("snapshot:main", { snapshotUrl: "/snap/main.jpg" }),
+        ],
+      }),
+    );
+    fetchLiveViewHealthMock.mockResolvedValue({
+      relay: "failed",
+      reason: "Camera authentication failed. Update the camera password in settings.",
+    });
+
+    render(<LiveViewHarness />);
+
+    await flushAsyncWork();
+    expect(attachHlsPlayerMock).toHaveBeenCalledTimes(1);
+
+    act(() => {
+      hlsAttachments[0]?.fail("manifestLoadError");
+    });
+
+    await flushAsyncWork();
+
+    expect(screen.getByText("Live View Failed")).not.toBeNull();
+    expect(screen.getByTestId("reason").textContent).toBe(
+      "Camera authentication failed. Update the camera password in settings.",
+    );
+    expect(attachSnapshotPlayerMock).not.toHaveBeenCalled();
   });
 
   it("switches to the snapshot surface on manual selection and binds the image element", async () => {

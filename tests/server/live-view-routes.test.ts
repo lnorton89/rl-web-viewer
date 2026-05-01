@@ -86,6 +86,32 @@ describe("live-view routes", () => {
 
     await app.close();
   });
+
+  it("returns relay health reasons for playback troubleshooting", async () => {
+    const app = await createServer({
+      staticRoot,
+      liveView: {
+        buildLiveViewBootstrap: async () => createBootstrap(),
+        getMediaRelayHealth: () => ({
+          relay: "failed",
+          reason: "Camera authentication failed. Update the camera password in settings.",
+        }),
+      },
+    });
+
+    const response = await app.inject({
+      method: "GET",
+      url: "/api/live-view/health",
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual({
+      relay: "failed",
+      reason: "Camera authentication failed. Update the camera password in settings.",
+    });
+
+    await app.close();
+  });
 });
 
 async function mkdirIndex(staticRoot: string): Promise<void> {

@@ -7,7 +7,10 @@ import type {
   LiveViewPlayback,
   ViewerStateKind,
 } from "../../../src/types/live-view.js";
-import { fetchLiveViewBootstrap } from "../lib/live-view-api.js";
+import {
+  fetchLiveViewBootstrap,
+  fetchLiveViewHealth,
+} from "../lib/live-view-api.js";
 import { attachHlsPlayer } from "../lib/players/hls-player.js";
 import type { PlayerAttachment } from "../lib/players/player-contract.js";
 import { attachSnapshotPlayer } from "../lib/players/snapshot-player.js";
@@ -105,7 +108,33 @@ export function useLiveView(): {
         return;
       }
 
+      const applyAuthFailureIfPresent = () => {
+        void resolvePlaybackFailureReason(reason).then((resolvedReason) => {
+          if (!isAuthFailureReason(resolvedReason)) {
+            return;
+          }
+
+          const latestAttempt = activeAttemptRef.current;
+
+          if (latestAttempt === null) {
+            return;
+          }
+
+          activeAttemptRef.current = null;
+          resetAttachment();
+          clearRetryTimer();
+          setState({ kind: "failed", reason: resolvedReason });
+        });
+      };
+
       resetAttachment();
+
+      if (isAuthFailureReason(reason)) {
+        activeAttemptRef.current = null;
+        clearRetryTimer();
+        setState({ kind: "failed", reason });
+        return;
+      }
 
       if (currentAttempt.retryCount < RETRY_DELAYS_MS.length) {
         const nextRetryCount = currentAttempt.retryCount + 1;
@@ -120,6 +149,7 @@ export function useLiveView(): {
         retryTimerRef.current = window.setTimeout(() => {
           setActivationNonce((value: number) => value + 1);
         }, retryDelay);
+        applyAuthFailureIfPresent();
         return;
       }
 
@@ -133,11 +163,21 @@ export function useLiveView(): {
         setState({ kind: "reconnecting", reason });
         setCurrentModeId(fallbackModeId);
         setActivationNonce((value: number) => value + 1);
+        applyAuthFailureIfPresent();
         return;
       }
 
       activeAttemptRef.current = null;
       setState({ kind: "failed", reason });
+      void resolvePlaybackFailureReason(reason).then((resolvedReason) => {
+        const latestAttempt = activeAttemptRef.current;
+
+        if (latestAttempt !== null || !isAuthFailureReason(resolvedReason)) {
+          return;
+        }
+
+        setState({ kind: "failed", reason: resolvedReason });
+      });
     },
     [clearRetryTimer, fallbackOrder, resetAttachment],
   );
@@ -393,4 +433,33 @@ function getErrorMessage(error: unknown, fallbackMessage: string): string {
   }
 
   return fallbackMessage;
+}
+
+async function resolvePlaybackFailureReason(reason: string): Promise<string> {
+  try {
+    const health = await fetchLiveViewHealth();
+
+    if (health.relay === "failed" && typeof health.reason === "string") {
+      const trimmedReason = health.reason.trim();
+
+      if (trimmedReason !== "") {
+        return trimmedReason;
+      }
+    }
+  } catch {
+    // The original player error is still useful when health is unavailable.
+  }
+
+  return reason;
+}
+
+function isAuthFailureReason(reason: string): boolean {
+  const normalizedReason = reason.toLowerCase();
+
+  return (
+    normalizedReason.includes("authentication failed") ||
+    normalizedReason.includes("unauthorized") ||
+    normalizedReason.includes("401") ||
+    normalizedReason.includes("invalid credentials")
+  );
 }

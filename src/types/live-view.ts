@@ -45,3 +45,8 @@ export type LiveViewDiagnostics = {
   nextFallbackModeId: LiveModeId | null;
   reason: string | null;
 };
+
+export type LiveViewHealth = {
+  relay: "starting" | "ready" | "failed";
+  reason?: string;
+};

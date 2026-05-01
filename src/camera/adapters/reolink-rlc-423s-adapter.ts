@@ -24,6 +24,16 @@ export function createRlc423sAdapter(): CameraAdapter {
       }
 
       if (
+        message.includes("401") ||
+        message.includes("unauthorized") ||
+        message.includes("authentication") ||
+        message.includes("invalid credentials") ||
+        message.includes("bad credentials")
+      ) {
+        return "Camera authentication failed. Update the camera password in settings.";
+      }
+
+      if (
         message.includes("eacces") ||
         message.includes("denied") ||
         message.includes("forbidden")

@@ -166,6 +166,16 @@ export function classifyLiveViewFailure(error: unknown): string {
     return "Live view timed out";
   }
 
+  if (
+    message.includes("401") ||
+    message.includes("unauthorized") ||
+    message.includes("authentication") ||
+    message.includes("invalid credentials") ||
+    message.includes("bad credentials")
+  ) {
+    return "Camera authentication failed. Update the camera password in settings.";
+  }
+
   if (message.includes("access denied") || message.includes("eacces")) {
     return "Live view access was denied";
   }

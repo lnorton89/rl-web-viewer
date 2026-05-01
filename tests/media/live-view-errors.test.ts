@@ -35,6 +35,9 @@ describe("live-view bootstrap failures", () => {
     expect(classifyLiveViewFailure(new Error("unsupported codec"))).toBe(
       "Camera firmware is not supported for live view",
     );
+    expect(classifyLiveViewFailure(new Error("RTSP source returned 401 Unauthorized"))).toBe(
+      "Camera authentication failed. Update the camera password in settings.",
+    );
   });
 
   it("returns failed diagnostics and writes a sanitized artifact when no mode is supported", async () => {
